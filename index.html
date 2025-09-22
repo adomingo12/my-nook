@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Reading Nook</title>
+    <link rel="icon" type="image/png" href="book_image.png">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Main Title Bar -->
+    <header class="main-header">
+        <div class="main-header-content">
+            <div class="library-title">
+                <img src="book_image.png" alt="Book icon" class="book-icon">
+                <h1>My Reading Nook <span class="author-credit">by Alicia Domingo</span></h1>
+            </div>
+            <div class="header-controls">
+                <button id="settings-btn" class="settings-btn" title="Settings">Settings</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="app-layout">
+        <!-- App Layout -->
+        <div class="app-layout">
+            <!-- Filters Sidebar -->
+            <div class="filters-sidebar">
+                <div class="filters-header">
+                    <h3>Filters</h3>
+                    <button id="clear-filters-btn" class="clear-filters-btn">Clear All</button>
+                </div>
+
+                <!-- Status Filter -->
+                <div class="filter-category">
+                    <button class="filter-category-toggle" data-category="status">
+                        <span class="filter-category-title">Status</span>
+                        <span class="filter-toggle-icon">▼</span>
+                    </button>
+                    <div class="filter-options" id="status-options">
+                        <label class="filter-option">
+                            <input type="checkbox" name="status" value="TBR">
+                            <span>To Be Read</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="status" value="Reading">
+                            <span>Currently Reading</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="status" value="Finished">
+                            <span>Finished</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="status" value="DNF">
+                            <span>Did Not Finish</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Format Filter -->
+                <div class="filter-category">
+                    <button class="filter-category-toggle" data-category="format">
+                        <span class="filter-category-title">Format</span>
+                        <span class="filter-toggle-icon">▼</span>
+                    </button>
+                    <div class="filter-options" id="format-options">
+                        <label class="filter-option">
+                            <input type="checkbox" name="format" value="Physical">
+                            <span>Physical</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="format" value="Kindle">
+                            <span>Kindle</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="format" value="Audiobook">
+                            <span>Audiobook</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Genre Filter -->
+                <div class="filter-category">
+                    <button class="filter-category-toggle" data-category="genre">
+                        <span class="filter-category-title">Genre</span>
+                        <span class="filter-toggle-icon">▼</span>
+                    </button>
+                    <div class="filter-options" id="genre-options">
+                        <!-- Fiction Genres -->
+                        <div class="genre-subcategory">
+                            <button class="subcategory-toggle" data-subcategory="fiction">
+                                <h4 class="subcategory-title">Fiction</h4>
+                                <span class="subcategory-toggle-icon">▼</span>
+                            </button>
+                            <div class="subcategory-options" id="fiction-options">
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Literary Fiction">
+                                <span>Literary Fiction</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Contemporary Fiction">
+                                <span>Contemporary Fiction</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Historical Fiction">
+                                <span>Historical Fiction</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Science Fiction">
+                                <span>Science Fiction</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Fantasy">
+                                <span>Fantasy</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Mystery">
+                                <span>Mystery</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Thriller">
+                                <span>Thriller</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Suspense">
+                                <span>Suspense</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Romance">
+                                <span>Romance</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Horror">
+                                <span>Horror</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Adventure">
+                                <span>Adventure</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Western">
+                                <span>Western</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Crime">
+                                <span>Crime</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Detective">
+                                <span>Detective</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Dystopian">
+                                <span>Dystopian</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Magical Realism">
+                                <span>Magical Realism</span>
+                            </label>
+                            </div>
+                        </div>
+
+                        <!-- Non-Fiction Genres -->
+                        <div class="genre-subcategory">
+                            <button class="subcategory-toggle" data-subcategory="non-fiction">
+                                <h4 class="subcategory-title">Non-Fiction</h4>
+                                <span class="subcategory-toggle-icon">▼</span>
+                            </button>
+                            <div class="subcategory-options" id="non-fiction-options">
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Biography">
+                                <span>Biography</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Autobiography">
+                                <span>Autobiography</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Memoir">
+                                <span>Memoir</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="History">
+                                <span>History</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="True Crime">
+                                <span>True Crime</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Self-Help">
+                                <span>Self-Help</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Health & Wellness">
+                                <span>Health & Wellness</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Business">
+                                <span>Business</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Finance">
+                                <span>Finance</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Psychology">
+                                <span>Psychology</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Philosophy">
+                                <span>Philosophy</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Religion & Spirituality">
+                                <span>Religion & Spirituality</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Science">
+                                <span>Science</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Technology">
+                                <span>Technology</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Politics">
+                                <span>Politics</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Travel">
+                                <span>Travel</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Cooking">
+                                <span>Cooking</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Art & Design">
+                                <span>Art & Design</span>
+                            </label>
+                            </div>
+                        </div>
+
+                        <!-- Age-Specific Genres -->
+                        <div class="genre-subcategory">
+                            <button class="subcategory-toggle" data-subcategory="age-categories">
+                                <h4 class="subcategory-title">Age Categories</h4>
+                                <span class="subcategory-toggle-icon">▼</span>
+                            </button>
+                            <div class="subcategory-options" id="age-categories-options">
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Young Adult">
+                                <span>Young Adult</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="New Adult">
+                                <span>New Adult</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Children's">
+                                <span>Children's</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Middle Grade">
+                                <span>Middle Grade</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Picture Books">
+                                <span>Picture Books</span>
+                            </label>
+                            </div>
+                        </div>
+
+                        <!-- Specialized Genres -->
+                        <div class="genre-subcategory">
+                            <button class="subcategory-toggle" data-subcategory="specialized">
+                                <h4 class="subcategory-title">Specialized</h4>
+                                <span class="subcategory-toggle-icon">▼</span>
+                            </button>
+                            <div class="subcategory-options" id="specialized-options">
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Poetry">
+                                <span>Poetry</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Drama">
+                                <span>Drama</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Essays">
+                                <span>Essays</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Short Stories">
+                                <span>Short Stories</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Graphic Novel">
+                                <span>Graphic Novel</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Comics">
+                                <span>Comics</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Reference">
+                                <span>Reference</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Textbook">
+                                <span>Textbook</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Guide">
+                                <span>Guide</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="genre" value="Humor">
+                                <span>Humor</span>
+                            </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Page Count Filter -->
+                <div class="filter-category">
+                    <button class="filter-category-toggle" data-category="pageCount">
+                        <span class="filter-category-title">Page Count</span>
+                        <span class="filter-toggle-icon">▼</span>
+                    </button>
+                    <div class="filter-options" id="pageCount-options">
+                        <label class="filter-option">
+                            <input type="checkbox" name="pageCount" value="0-100">
+                            <span>0-100 pages</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="pageCount" value="101-200">
+                            <span>101-200 pages</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="pageCount" value="201-300">
+                            <span>201-300 pages</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="pageCount" value="301-400">
+                            <span>301-400 pages</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="pageCount" value="401-500">
+                            <span>401-500 pages</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="pageCount" value="501-600">
+                            <span>501-600 pages</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="pageCount" value="601-700">
+                            <span>601-700 pages</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="pageCount" value="701-800">
+                            <span>701-800 pages</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="pageCount" value="801+">
+                            <span>801+ pages</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="pageCount" value="800+">
+                            <span>800+ pages</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Word Count Filter -->
+                <div class="filter-category">
+                    <button class="filter-category-toggle" data-category="wordCount">
+                        <span class="filter-category-title">Word Count</span>
+                        <span class="filter-toggle-icon">▼</span>
+                    </button>
+                    <div class="filter-options" id="wordCount-options">
+                        <label class="filter-option">
+                            <input type="checkbox" name="wordCount" value="0-25000">
+                            <span>0-25k words</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="wordCount" value="25001-50000">
+                            <span>25k-50k words</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="wordCount" value="50001-75000">
+                            <span>50k-75k words</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="wordCount" value="75001-100000">
+                            <span>75k-100k words</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="wordCount" value="100001-125000">
+                            <span>100k-125k words</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="wordCount" value="125001-150000">
+                            <span>125k-150k words</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="wordCount" value="150001+">
+                            <span>150k+ words</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Rating Filter -->
+                <div class="filter-category">
+                    <button class="filter-category-toggle" data-category="rating">
+                        <span class="filter-category-title">Rating</span>
+                        <span class="filter-toggle-icon">▼</span>
+                    </button>
+                    <div class="filter-options" id="rating-options">
+                        <label class="filter-option">
+                            <input type="checkbox" name="rating" value="1">
+                            <span>1+ Stars</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="rating" value="2">
+                            <span>2+ Stars</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="rating" value="3">
+                            <span>3+ Stars</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="rating" value="4">
+                            <span>4+ Stars</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="rating" value="5">
+                            <span>5 Stars</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Reading Time Filter -->
+                <div class="filter-category">
+                    <button class="filter-category-toggle" data-category="readingTime">
+                        <span class="filter-category-title">Reading Time</span>
+                        <span class="filter-toggle-icon">▼</span>
+                    </button>
+                    <div class="filter-options" id="readingTime-options">
+                        <label class="filter-option">
+                            <input type="checkbox" name="readingTime" value="0-3">
+                            <span>0-3 hours</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="readingTime" value="3-6">
+                            <span>3-6 hours</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="readingTime" value="6-9">
+                            <span>6-9 hours</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="readingTime" value="9-12">
+                            <span>9-12 hours</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="readingTime" value="12-15">
+                            <span>12-15 hours</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="readingTime" value="15+">
+                            <span>15+ hours</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Date Published Filter -->
+                <div class="filter-category">
+                    <button class="filter-category-toggle" data-category="datePublished">
+                        <span class="filter-category-title">Date Published</span>
+                        <span class="filter-toggle-icon">▼</span>
+                    </button>
+                    <div class="filter-options" id="datePublished-options">
+                        <label class="filter-option">
+                            <input type="checkbox" name="datePublished" value="2020-2024">
+                            <span>2020-2024</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="datePublished" value="2015-2019">
+                            <span>2015-2019</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="datePublished" value="2010-2014">
+                            <span>2010-2014</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="datePublished" value="2005-2009">
+                            <span>2005-2009</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="datePublished" value="2000-2004">
+                            <span>2000-2004</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="datePublished" value="1995-1999">
+                            <span>1995-1999</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="datePublished" value="1990-1994">
+                            <span>1990-1994</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="datePublished" value="before-1990">
+                            <span>Before 1990</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="main-content">
+                <main class="main">
+                    <div class="container">
+
+                        <!-- Add Book, Statistics, Search, and Sort Controls -->
+                        <div class="sort-controls">
+                            <div class="left-controls">
+                                <button id="add-book-btn" class="add-book-btn" title="Add New Book">Add Book</button>
+                                <button id="statistics-btn" class="statistics-btn" title="Library Statistics">Statistics</button>
+                                <div class="search-container">
+                                    <input type="text" id="search-input" placeholder="Search by title, author, format, genre..." class="search-input">
+                                    <button id="clear-search" class="clear-search" aria-label="Clear search">×</button>
+                                </div>
+                            </div>
+                            <div class="sort-control">
+                                <label for="sort-select">Sort by:</label>
+                                <select id="sort-select">
+                                    <option value="title-asc">Title (A-Z)</option>
+                                    <option value="title-desc">Title (Z-A)</option>
+                                    <option value="author-asc">Author (A-Z)</option>
+                                    <option value="author-desc">Author (Z-A)</option>
+                                    <option value="dateAdded-desc">Date Added (Newest First)</option>
+                                    <option value="dateAdded-asc">Date Added (Oldest First)</option>
+                                    <option value="dateFinished-desc">Date Finished (Recent First)</option>
+                                    <option value="dateFinished-asc">Date Finished (Oldest First)</option>
+                                    <option value="datePublished-desc">Date Published (Newest First)</option>
+                                    <option value="datePublished-asc">Date Published (Oldest First)</option>
+                                    <option value="rating-desc">Rating (Highest First)</option>
+                                    <option value="rating-asc">Rating (Lowest First)</option>
+                                    <option value="pageCount-desc">Page Count (Most Pages)</option>
+                                    <option value="pageCount-asc">Page Count (Least Pages)</option>
+                                </select>
+                            </div>
+                        </div>
+
+
+
+                <div class="action-section" style="display: none;">
+                    <!-- Hidden export/import functionality - buttons moved to search section -->
+                    <button id="export-btn" class="export-btn">Export Library</button>
+                    <label for="import-file" class="import-btn">Import Library</label>
+                    <input type="file" id="import-file" accept=".json" style="display: none;">
+                </div>
+            </section>
+
+
+
+
+            <!-- Bookshelf Display -->
+            <section class="bookshelf-container">
+                <div id="bookshelf" class="bookshelf">
+                    <!-- Books will be dynamically inserted here -->
+                </div>
+            </section>
+
+                    <!-- Empty State -->
+                    <div id="empty-state" class="empty-state hidden">
+                        <h3>📚 No Books Found</h3>
+                        <p>No books found matching your current search criteria.<br>
+                        Try adjusting your filters or search terms.</p>
+                    </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+
+
+    </main>
+
+    <!-- Book Detail Modal -->
+    <div id="book-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <button class="modal-close" aria-label="Close modal">×</button>
+            <div class="modal-body">
+                <!-- Modal content will be dynamically inserted -->
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <button class="modal-close" aria-label="Close modal">×</button>
+            <div class="modal-body">
+                <h2>Settings</h2>
+                <div class="settings-container">
+                    <div class="setting-item">
+                        <label class="setting-label">
+                            <span>Dark Mode</span>
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="dark-mode-toggle" class="toggle-input">
+                                <span class="toggle-slider"></span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Statistics Modal -->
+    <div id="statistics-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content statistics-modal-content">
+            <button class="modal-close" aria-label="Close modal">×</button>
+            <div class="modal-body">
+                <h2>Library Statistics</h2>
+                <div class="stats-container">
+                    <div class="stat-item">
+                        <span class="stat-label">Total Books</span>
+                        <span class="stat-value" id="total-books">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Books Read</span>
+                        <span class="stat-value" id="books-read">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Currently Reading</span>
+                        <span class="stat-value" id="currently-reading">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">To Be Read</span>
+                        <span class="stat-value" id="to-be-read">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Average Rating</span>
+                        <span class="stat-value" id="average-rating">0.0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Total Pages</span>
+                        <span class="stat-value" id="total-pages">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Reading Time</span>
+                        <span class="stat-value" id="reading-time">0h</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">This Year</span>
+                        <span class="stat-value" id="books-this-year">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Book Modal -->
+    <div id="add-book-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <button class="modal-close" aria-label="Close modal">×</button>
+            <div class="modal-body">
+                <h2>Add New Book</h2>
+                <form id="add-book-form">
+                    <div class="form-with-preview">
+                        <div class="form-fields">
+                            <div class="form-group">
+                                <label for="book-image-url">Image URL:</label>
+                                <input type="url" id="book-image-url" placeholder="Enter cover image URL..." required>
+                            </div>
+                            <div class="form-group">
+                                <label for="book-title">Title:</label>
+                                <input type="text" id="book-title" placeholder="Enter book title..." required>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="book-author">Author:</label>
+                                    <input type="text" id="book-author" placeholder="Enter author name..." required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="book-genre">Genre:</label>
+                                    <select id="book-genre" required>
+                                        <option value="">Select a genre...</option>
+
+                                        <!-- Fiction Genres -->
+                                        <optgroup label="Fiction">
+                                            <option value="Literary Fiction">Literary Fiction</option>
+                                            <option value="Contemporary Fiction">Contemporary Fiction</option>
+                                            <option value="Historical Fiction">Historical Fiction</option>
+                                            <option value="Science Fiction">Science Fiction</option>
+                                            <option value="Fantasy">Fantasy</option>
+                                            <option value="Mystery">Mystery</option>
+                                            <option value="Thriller">Thriller</option>
+                                            <option value="Suspense">Suspense</option>
+                                            <option value="Romance">Romance</option>
+                                            <option value="Horror">Horror</option>
+                                            <option value="Adventure">Adventure</option>
+                                            <option value="Western">Western</option>
+                                            <option value="Crime">Crime</option>
+                                            <option value="Detective">Detective</option>
+                                            <option value="Dystopian">Dystopian</option>
+                                            <option value="Magical Realism">Magical Realism</option>
+                                        </optgroup>
+
+                                        <!-- Non-Fiction Genres -->
+                                        <optgroup label="Non-Fiction">
+                                            <option value="Biography">Biography</option>
+                                            <option value="Autobiography">Autobiography</option>
+                                            <option value="Memoir">Memoir</option>
+                                            <option value="History">History</option>
+                                            <option value="True Crime">True Crime</option>
+                                            <option value="Self-Help">Self-Help</option>
+                                            <option value="Health & Wellness">Health & Wellness</option>
+                                            <option value="Business">Business</option>
+                                            <option value="Finance">Finance</option>
+                                            <option value="Psychology">Psychology</option>
+                                            <option value="Philosophy">Philosophy</option>
+                                            <option value="Religion & Spirituality">Religion & Spirituality</option>
+                                            <option value="Science">Science</option>
+                                            <option value="Technology">Technology</option>
+                                            <option value="Politics">Politics</option>
+                                            <option value="Travel">Travel</option>
+                                            <option value="Cooking">Cooking</option>
+                                            <option value="Art & Design">Art & Design</option>
+                                        </optgroup>
+
+                                        <!-- Age-Specific Genres -->
+                                        <optgroup label="Age Categories">
+                                            <option value="Young Adult">Young Adult</option>
+                                            <option value="New Adult">New Adult</option>
+                                            <option value="Children's">Children's</option>
+                                            <option value="Middle Grade">Middle Grade</option>
+                                            <option value="Picture Books">Picture Books</option>
+                                        </optgroup>
+
+                                        <!-- Specialized Genres -->
+                                        <optgroup label="Specialized">
+                                            <option value="Poetry">Poetry</option>
+                                            <option value="Drama">Drama</option>
+                                            <option value="Essays">Essays</option>
+                                            <option value="Short Stories">Short Stories</option>
+                                            <option value="Graphic Novel">Graphic Novel</option>
+                                            <option value="Comics">Comics</option>
+                                            <option value="Reference">Reference</option>
+                                            <option value="Textbook">Textbook</option>
+                                            <option value="Guide">Guide</option>
+                                            <option value="Humor">Humor</option>
+                                        </optgroup>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="book-synopsis">Synopsis:</label>
+                                <textarea id="book-synopsis" placeholder="Enter book synopsis..." maxlength="500" required></textarea>
+                                <div class="character-count">
+                                    <span id="synopsis-count">0</span>/500 characters
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="book-status">Status:</label>
+                                    <select id="book-status" required>
+                                        <option value="">Select a status...</option>
+                                        <option value="TBR">To Be Read</option>
+                                        <option value="Reading">Currently Reading</option>
+                                        <option value="Finished">Finished</option>
+                                        <option value="DNF">Did Not Finish</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="book-pages">Page Count:</label>
+                                    <input type="number" id="book-pages" placeholder="Number of pages..." min="1" required>
+                                </div>
+                            </div>
+                            <div id="date-started-row" class="form-row" style="display: none;">
+                                <div class="form-group">
+                                    <label for="book-date-started">Date Started:</label>
+                                    <input type="date" id="book-date-started">
+                                </div>
+                                <div class="form-group" id="date-finished-field" style="display: none;">
+                                    <label for="book-date-finished">Date Finished:</label>
+                                    <input type="date" id="book-date-finished">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="book-date-published">Date Published:</label>
+                                    <input type="date" id="book-date-published" placeholder="Publication date...">
+                                </div>
+                                <div class="form-group">
+                                    <label>My Rating:</label>
+                                    <div class="star-rating" id="star-rating">
+                                        <span class="star" data-rating="1">★</span>
+                                        <span class="star" data-rating="2">★</span>
+                                        <span class="star" data-rating="3">★</span>
+                                        <span class="star" data-rating="4">★</span>
+                                        <span class="star" data-rating="5">★</span>
+                                    </div>
+                                    <input type="hidden" id="book-rating" value="">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="image-preview">
+                            <div class="preview-container">
+                                <img id="book-cover-preview" src="" alt="Book cover preview" style="display: none;">
+                                <div id="preview-placeholder" class="preview-placeholder">
+                                    <span>📖</span>
+                                    <p>Book cover will appear here</p>
+                                </div>
+                            </div>
+                            <div class="form-group format-group">
+                                <label>Format:</label>
+                                <div class="format-checkboxes">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="format" value="Physical" id="format-physical" required>
+                                        <span>Physical</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="format" value="Kindle" id="format-kindle">
+                                        <span>Kindle</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="format" value="Audiobook" id="format-audiobook">
+                                        <span>Audiobook</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" id="cancel-add-book">Cancel</button>
+                        <button type="submit" class="btn-primary">Add Book</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <div class="footer-content">
+            <p>&copy; 2025 My Reading Nook by Alicia Domingo. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

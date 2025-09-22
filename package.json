@@ -1,0 +1,34 @@
+{
+  "name": "virtual-bookshelf-library",
+  "version": "1.0.0",
+  "description": "A digital bookshelf application that displays a personal book collection in a visually appealing, library-style interface",
+  "main": "index.html",
+  "scripts": {
+    "update-library": "node scripts/update-library.js",
+    "serve": "python -m http.server 8000",
+    "serve-node": "npx http-server -p 8000 -c-1",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "keywords": [
+    "books",
+    "library",
+    "bookshelf",
+    "reading",
+    "personal-library",
+    "book-collection"
+  ],
+  "author": "Virtual Bookshelf Library",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "."
+  },
+  "homepage": ".",
+  "dependencies": {}
+}
