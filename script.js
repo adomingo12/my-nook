@@ -9,22 +9,68 @@ class BookshelfLibrary {
             format: [],
             genre: [],
             pageCount: [],
-            wordCount: [],
+            publisher: [],
             rating: [],
             readingTime: [],
-            datePublished: []
+            datePublished: [],
+            series: []
         };
         this.currentSort = 'title-asc';
-        
+
+        // Initialize Supabase client
+        this.supabase = null;
+        this.initializeSupabase();
+
         this.init();
     }
 
+    initializeSupabase() {
+        // Supabase configuration
+        const SUPABASE_URL = 'https://bsnirvyfiyofgakmxfyn.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzbmlydnlmaXlvZmdha214ZnluIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1ODc0OTI3OSwiZXhwIjoyMDc0MzI1Mjc5fQ.RKFSHw0Ju5_W_TQiA8GSCD2RF4cMATGTm8IemPyFGbE';
+
+        try {
+            this.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            console.log('✅ Supabase client initialized');
+        } catch (error) {
+            console.error('❌ Failed to initialize Supabase:', error);
+            this.showNotification('Database connection failed. Using local storage.', 'warning');
+        }
+    }
+
     async init() {
+        // Test database connection first
+        await this.testDatabaseConnection();
+
         this.bindEvents();
         await this.loadBooks();
         this.initializeFilters();
+        this.populateSeriesFilter(); // Populate series filter after books are loaded
         this.applyFilters(); // Use applyFilters instead of renderBooks directly
         this.updateStats();
+    }
+
+    // Test database connection
+    async testDatabaseConnection() {
+        if (!this.supabase) {
+            return;
+        }
+
+        try {
+            const { error } = await this.supabase
+                .from('reading_nook')
+                .select('count', { count: 'exact', head: true });
+
+            if (error) {
+                throw error;
+            }
+
+            console.log('✅ Database connection successful');
+            this.showNotification('Connected to database successfully', 'success');
+        } catch (error) {
+            console.error('❌ Database connection failed:', error);
+            this.showNotification('Database connection failed. Using local storage.', 'warning');
+        }
     }
 
     bindEvents() {
@@ -205,22 +251,60 @@ class BookshelfLibrary {
                 this.validateFormatSelection();
             });
         });
+
+        // Series dropdown functionality
+        document.getElementById('book-series').addEventListener('change', (e) => {
+            this.handleSeriesChange(e.target.value);
+        });
     }
 
     async loadBooks() {
         try {
-            const response = await fetch('./data/books.json');
-            if (response.ok) {
-                const data = await response.json();
-                this.books = data.books || [];
-                this.migrateBothFormat();
+            if (this.supabase) {
+                // Load from Supabase database
+                console.log('📚 Loading books from database...');
+                const { data, error } = await this.supabase
+                    .from('reading_nook')
+                    .select('*')
+                    .order('date_added', { ascending: false });
+
+                if (error) {
+                    throw error;
+                }
+
+                // Convert database format to app format
+                this.books = data.map(book => this.convertFromDbFormat(book));
+                console.log(`✅ Loaded ${this.books.length} books from database`);
+                this.showNotification(`Loaded ${this.books.length} books from database`, 'success');
             } else {
-                // If no books.json exists, start with empty array
-                this.books = [];
+                // Fallback to JSON file
+                const response = await fetch('./data/books.json');
+                if (response.ok) {
+                    const data = await response.json();
+                    this.books = data.books || [];
+                    this.migrateBothFormat();
+                } else {
+                    this.books = [];
+                }
             }
         } catch (error) {
-            console.log('No books.json found, starting with empty library');
-            this.books = [];
+            console.error('Error loading books:', error);
+            this.showNotification('Failed to load books from database. Using local data.', 'warning');
+
+            // Fallback to JSON file
+            try {
+                const response = await fetch('./data/books.json');
+                if (response.ok) {
+                    const data = await response.json();
+                    this.books = data.books || [];
+                    this.migrateBothFormat();
+                } else {
+                    this.books = [];
+                }
+            } catch (fallbackError) {
+                console.log('No fallback data found, starting with empty library');
+                this.books = [];
+            }
         }
 
         this.filteredBooks = [...this.books];
@@ -237,9 +321,67 @@ class BookshelfLibrary {
         });
     }
 
+    // Convert database format to app format
+    convertFromDbFormat(dbBook) {
+        // Clean and deduplicate format array
+        let formats = Array.isArray(dbBook.format) ? dbBook.format : [dbBook.format || 'Physical'];
+        formats = [...new Set(formats)].slice(0, 3); // Remove duplicates and limit to 3
+
+        return {
+            isbn: dbBook.isbn,
+            status: dbBook.status,
+            format: formats,
+            userRating: dbBook.user_rating || 0,
+            dateAdded: dbBook.date_added,
+            dateStarted: dbBook.date_started,
+            dateFinished: dbBook.date_finished,
+            title: dbBook.title,
+            author: dbBook.author,
+            coverUrl: dbBook.cover_url,
+            synopsis: dbBook.synopsis,
+            genre: dbBook.genre,
+            pageCount: dbBook.page_count,
+            datePublished: dbBook.date_published,
+            publisher: dbBook.publisher,
+            averageRating: dbBook.average_rating || 0,
+            series: dbBook.series || false,
+            seriesName: dbBook.series_name || null,
+            seriesNumber: dbBook.series_number || null
+        };
+    }
+
+    // Convert app format to database format
+    convertToDbFormat(appBook) {
+        // Clean and deduplicate format array before saving
+        let formats = Array.isArray(appBook.format) ? appBook.format : [appBook.format];
+        formats = [...new Set(formats)].slice(0, 3); // Remove duplicates and limit to 3
+
+        return {
+            isbn: appBook.isbn,
+            status: appBook.status,
+            format: formats,
+            user_rating: appBook.userRating || null,
+            date_added: appBook.dateAdded,
+            date_started: appBook.dateStarted || null,
+            date_finished: appBook.dateFinished || null,
+            title: appBook.title,
+            author: appBook.author,
+            cover_url: appBook.coverUrl,
+            synopsis: appBook.synopsis,
+            genre: appBook.genre,
+            page_count: appBook.pageCount,
+            date_published: appBook.datePublished,
+            publisher: appBook.publisher,
+            average_rating: appBook.averageRating || null,
+            series: appBook.series || false,
+            series_name: appBook.series && appBook.seriesName ? appBook.seriesName : null,
+            series_number: appBook.series && appBook.seriesNumber ? parseFloat(appBook.seriesNumber) : null
+        };
+    }
+
     initializeFilters() {
         // Initialize all filter categories as collapsed
-        const categories = ['status', 'format', 'genre', 'pageCount', 'wordCount', 'rating', 'readingTime', 'datePublished'];
+        const categories = ['status', 'format', 'genre', 'pageCount', 'publisher', 'rating', 'readingTime', 'datePublished'];
         categories.forEach(category => {
             const options = document.getElementById(`${category}-options`);
             const toggle = document.querySelector(`[data-category="${category}"]`);
@@ -263,7 +405,7 @@ class BookshelfLibrary {
 
     updateFilters() {
         // Collect all checked filters
-        const filterTypes = ['status', 'format', 'genre', 'pageCount', 'wordCount', 'rating', 'readingTime', 'datePublished'];
+        const filterTypes = ['status', 'format', 'genre', 'pageCount', 'publisher', 'rating', 'readingTime', 'datePublished', 'series'];
 
         filterTypes.forEach(type => {
             const checkboxes = document.querySelectorAll(`input[name="${type}"]:checked`);
@@ -351,10 +493,11 @@ class BookshelfLibrary {
             format: [],
             genre: [],
             pageCount: [],
-            wordCount: [],
+            publisher: [],
             rating: [],
             readingTime: [],
-            datePublished: []
+            datePublished: [],
+            series: []
         };
 
         // Apply filters to show all books
@@ -392,6 +535,43 @@ class BookshelfLibrary {
                 checkbox.checked = true;
             }
         });
+    }
+
+    // Clean and validate format array
+    cleanFormatArray(formats) {
+        if (!formats || formats.length === 0) {
+            return ['Physical']; // Default format
+        }
+
+        // Convert to array if not already
+        const formatArray = Array.isArray(formats) ? formats : [formats];
+
+        // Remove duplicates, filter out empty values, and limit to 3
+        const cleanedFormats = [...new Set(formatArray)]
+            .filter(format => format && format.trim())
+            .slice(0, 3);
+
+        // Ensure at least one format
+        return cleanedFormats.length > 0 ? cleanedFormats : ['Physical'];
+    }
+
+    // Handle series dropdown change
+    handleSeriesChange(seriesValue) {
+        const seriesFields = document.getElementById('series-fields');
+        const seriesName = document.getElementById('series-name');
+        const seriesNumber = document.getElementById('series-number');
+
+        if (seriesValue === 'Yes') {
+            seriesFields.style.display = 'block';
+            seriesName.required = true;
+            seriesNumber.required = true;
+        } else {
+            seriesFields.style.display = 'none';
+            seriesName.required = false;
+            seriesNumber.required = false;
+            seriesName.value = '';
+            seriesNumber.value = '';
+        }
     }
 
     updateImagePreview(url) {
@@ -454,6 +634,7 @@ class BookshelfLibrary {
                 const titleMatch = book.title?.toLowerCase().includes(searchTerm);
                 const authorMatch = book.author?.toLowerCase().includes(searchTerm);
                 const genreMatch = book.genre?.toLowerCase().includes(searchTerm);
+                const isbnMatch = book.isbn?.toLowerCase().includes(searchTerm);
 
                 // Handle format search (both array and single format)
                 let formatMatch = false;
@@ -463,7 +644,7 @@ class BookshelfLibrary {
                     formatMatch = book.format.toLowerCase().includes(searchTerm);
                 }
 
-                if (!titleMatch && !authorMatch && !genreMatch && !formatMatch) return false;
+                if (!titleMatch && !authorMatch && !genreMatch && !formatMatch && !isbnMatch) return false;
             }
 
             // Status filter
@@ -503,20 +684,11 @@ class BookshelfLibrary {
                 if (!matchesRange) return false;
             }
 
-            // Word count filter (estimated from page count)
-            if (this.currentFilters.wordCount.length > 0) {
-                const estimatedWords = (book.pageCount || 0) * 275;
-                const matchesRange = this.currentFilters.wordCount.some(range => {
-                    if (range === '0-25000') return estimatedWords <= 25000;
-                    if (range === '25001-50000') return estimatedWords >= 25001 && estimatedWords <= 50000;
-                    if (range === '50001-75000') return estimatedWords >= 50001 && estimatedWords <= 75000;
-                    if (range === '75001-100000') return estimatedWords >= 75001 && estimatedWords <= 100000;
-                    if (range === '100001-125000') return estimatedWords >= 100001 && estimatedWords <= 125000;
-                    if (range === '125001-150000') return estimatedWords >= 125001 && estimatedWords <= 150000;
-                    if (range === '150001+') return estimatedWords >= 150001;
+            // Publisher filter
+            if (this.currentFilters.publisher.length > 0) {
+                if (!book.publisher || !this.currentFilters.publisher.includes(book.publisher)) {
                     return false;
-                });
-                if (!matchesRange) return false;
+                }
             }
 
             // Rating filter
@@ -550,17 +722,31 @@ class BookshelfLibrary {
 
                 const publishedYear = publishedDate.getFullYear();
                 const matchesRange = this.currentFilters.datePublished.some(range => {
-                    if (range === '2020-2024') return publishedYear >= 2020 && publishedYear <= 2024;
-                    if (range === '2015-2019') return publishedYear >= 2015 && publishedYear <= 2019;
-                    if (range === '2010-2014') return publishedYear >= 2010 && publishedYear <= 2014;
-                    if (range === '2005-2009') return publishedYear >= 2005 && publishedYear <= 2009;
-                    if (range === '2000-2004') return publishedYear >= 2000 && publishedYear <= 2004;
-                    if (range === '1995-1999') return publishedYear >= 1995 && publishedYear <= 1999;
-                    if (range === '1990-1994') return publishedYear >= 1990 && publishedYear <= 1994;
-                    if (range === 'before-1990') return publishedYear < 1990;
+                    if (range === '2020-2029') return publishedYear >= 2020 && publishedYear <= 2029;
+                    if (range === '2010-2019') return publishedYear >= 2010 && publishedYear <= 2019;
+                    if (range === '2000-2009') return publishedYear >= 2000 && publishedYear <= 2009;
+                    if (range === '1990-1999') return publishedYear >= 1990 && publishedYear <= 1999;
+                    if (range === '1980-1989') return publishedYear >= 1980 && publishedYear <= 1989;
+                    if (range === '1970-1979') return publishedYear >= 1970 && publishedYear <= 1979;
+                    if (range === '1960-1969') return publishedYear >= 1960 && publishedYear <= 1969;
+                    if (range === '1950-1959') return publishedYear >= 1950 && publishedYear <= 1959;
+                    if (range === '1940-1949') return publishedYear >= 1940 && publishedYear <= 1949;
+                    if (range === '1930-1939') return publishedYear >= 1930 && publishedYear <= 1939;
+                    if (range === '1920-1929') return publishedYear >= 1920 && publishedYear <= 1929;
+                    if (range === '1910-1919') return publishedYear >= 1910 && publishedYear <= 1919;
+                    if (range === '1900-1909') return publishedYear >= 1900 && publishedYear <= 1909;
+                    if (range === 'before-1900') return publishedYear < 1900;
                     return false;
                 });
                 if (!matchesRange) return false;
+            }
+
+            // Series filter
+            if (this.currentFilters.series.length > 0) {
+                const bookSeriesName = book.seriesName || '';
+                if (!this.currentFilters.series.includes(bookSeriesName)) {
+                    return false;
+                }
             }
 
             return true;
@@ -570,10 +756,63 @@ class BookshelfLibrary {
         this.renderBooks();
     }
 
+    populateSeriesFilter() {
+        const seriesContainer = document.getElementById('series-options');
+        if (!seriesContainer) return;
+
+        // Get all unique series names from books that are part of a series
+        const seriesNames = [...new Set(
+            this.books
+                .filter(book => book.series && book.seriesName)
+                .map(book => book.seriesName)
+        )].sort();
+
+        // Clear existing options
+        seriesContainer.innerHTML = '';
+
+        // Add series options
+        seriesNames.forEach(seriesName => {
+            const label = document.createElement('label');
+            label.className = 'filter-option';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.name = 'series';
+            checkbox.value = seriesName;
+            checkbox.addEventListener('change', () => this.updateFilters());
+
+            const span = document.createElement('span');
+            span.textContent = seriesName;
+
+            label.appendChild(checkbox);
+            label.appendChild(span);
+            seriesContainer.appendChild(label);
+        });
+    }
+
     sortBooks() {
         const [field, direction] = this.currentSort.split('-');
 
         this.filteredBooks.sort((a, b) => {
+            // If series filter is active, prioritize series sorting
+            if (this.currentFilters.series.length > 0) {
+                // First sort by series name
+                const aSeriesName = a.seriesName || '';
+                const bSeriesName = b.seriesName || '';
+
+                if (aSeriesName !== bSeriesName) {
+                    return aSeriesName.localeCompare(bSeriesName);
+                }
+
+                // If same series, sort by series number
+                const aSeriesNumber = parseFloat(a.seriesNumber) || 0;
+                const bSeriesNumber = parseFloat(b.seriesNumber) || 0;
+
+                if (aSeriesNumber !== bSeriesNumber) {
+                    return aSeriesNumber - bSeriesNumber;
+                }
+            }
+
             let aValue, bValue;
 
             switch (field) {
@@ -585,17 +824,25 @@ class BookshelfLibrary {
                     aValue = a.author?.toLowerCase() || '';
                     bValue = b.author?.toLowerCase() || '';
                     break;
+                case 'publisher':
+                    aValue = a.publisher?.toLowerCase() || '';
+                    bValue = b.publisher?.toLowerCase() || '';
+                    break;
                 case 'dateAdded':
                     aValue = new Date(a.dateAdded || 0);
                     bValue = new Date(b.dateAdded || 0);
                     break;
-                case 'dateFinished':
-                    aValue = new Date(a.dateFinished || 0);
-                    bValue = new Date(b.dateFinished || 0);
-                    break;
                 case 'datePublished':
                     aValue = new Date(a.datePublished || 0);
                     bValue = new Date(b.datePublished || 0);
+                    break;
+                case 'dateStarted':
+                    aValue = new Date(a.dateStarted || 0);
+                    bValue = new Date(b.dateStarted || 0);
+                    break;
+                case 'dateFinished':
+                    aValue = new Date(a.dateFinished || 0);
+                    bValue = new Date(b.dateFinished || 0);
                     break;
                 case 'rating':
                     aValue = a.userRating || 0;
@@ -712,10 +959,50 @@ class BookshelfLibrary {
                         `<img src="${book.coverUrl}" alt="${book.title}" class="book-detail-cover">` :
                         `<div class="book-cover-placeholder" style="width: 200px; height: 300px;">No Cover Available</div>`
                     }
+                    ${book.dateStarted || book.dateFinished || (book.currentPage && book.currentPage > 0) ? `
+                    <div class="cover-reading-info">
+                        ${book.dateStarted || book.dateFinished ? `
+                        <div class="reading-dates">
+                            ${book.dateStarted ? `Started: ${new Date(book.dateStarted).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })}` : ''}
+                            ${book.dateStarted && book.dateFinished ? '<br>' : ''}
+                            ${book.dateFinished ? `Finished: ${new Date(book.dateFinished).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })}` : ''}
+                        </div>
+                        ` : ''}
+                        ${book.currentPage && book.currentPage > 0 ? `
+                        <div class="current-page-info">
+                            Current Page: ${book.currentPage} of ${book.pageCount || 0}
+                        </div>
+                        ` : ''}
+                    </div>
+                    ` : ''}
                 </div>
                 <div class="book-detail-info">
-                    <h3>${book.title || 'Unknown Title'}</h3>
+                    <div class="title-with-badges">
+                        <h3>${book.title || 'Unknown Title'}</h3>
+                        <div class="title-badges">
+                            <span class="badge status-${book.status?.toLowerCase() || 'tbr'}">${book.status || 'TBR'}</span>
+                            ${this.getFormatBadges(book.format)}
+                        </div>
+                    </div>
                     <p class="book-detail-author">by ${book.author || 'Unknown Author'}</p>
+
+                    ${book.series ? `
+                        <div class="book-series-info">
+                            <span class="series-badge">📚 ${book.seriesName} #${book.seriesNumber}</span>
+                        </div>
+                    ` : ''}
+
+                    <div class="book-ratings">
+                        <div class="rating-item">
+                            <span class="rating-label">My Rating:</span>
+                            <div class="stars">${userStars}</div>
+                        </div>
+                        <div class="rating-item">
+                            <span class="rating-label">Average Rating:</span>
+                            <div class="stars">${apiStars}</div>
+                            <small>${(book.averageRating || 0).toFixed(1)}/5</small>
+                        </div>
+                    </div>
 
                     ${book.synopsis ? `
                         <div class="book-synopsis">
@@ -726,25 +1013,15 @@ class BookshelfLibrary {
 
                     <div class="book-detail-meta">
                         <div class="meta-item">
-                            <div class="meta-label">Status</div>
-                            <div class="meta-value">
-                                <span class="badge status-${book.status?.toLowerCase() || 'tbr'}">${book.status || 'TBR'}</span>
-                            </div>
-                        </div>
-                        <div class="meta-item">
-                            <div class="meta-label">Format</div>
-                            <div class="meta-value">
-                                ${this.getFormatBadges(book.format)}
-                            </div>
-                        </div>
-                        <div class="meta-item">
                             <div class="meta-label">Pages</div>
                             <div class="meta-value">${book.pageCount || 0}</div>
                         </div>
+                        ${book.isbn ? `
                         <div class="meta-item">
-                            <div class="meta-label">Est. Words</div>
-                            <div class="meta-value">${estimatedWords.toLocaleString()}</div>
+                            <div class="meta-label">ISBN-13</div>
+                            <div class="meta-value">${book.isbn}</div>
                         </div>
+                        ` : ''}
                         <div class="meta-item">
                             <div class="meta-label">Est. Reading Time</div>
                             <div class="meta-value">${estimatedHours} hr</div>
@@ -755,30 +1032,17 @@ class BookshelfLibrary {
                         </div>
                         <div class="meta-item">
                             <div class="meta-label">Date Published</div>
-                            <div class="meta-value">${book.datePublished ? new Date(book.datePublished).toLocaleDateString() : 'Unknown'}</div>
+                            <div class="meta-value">${book.datePublished ? new Date(book.datePublished).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Unknown'}</div>
                         </div>
+                        ${book.publisher ? `
                         <div class="meta-item">
-                            <div class="meta-label">My Rating</div>
-                            <div class="meta-value">
-                                <div class="stars">${userStars}</div>
-                            </div>
+                            <div class="meta-label">Publisher</div>
+                            <div class="meta-value">${book.publisher}</div>
                         </div>
-                        <div class="meta-item">
-                            <div class="meta-label">Average Rating</div>
-                            <div class="meta-value">
-                                <div class="stars">${apiStars}</div>
-                                <small>${(book.averageRating || 0).toFixed(1)}/5</small>
-                            </div>
-                        </div>
+                        ` : ''}
                     </div>
 
-                    ${book.dateStarted || book.dateFinished ? `
-                        <div class="book-dates">
-                            <h4>Reading History</h4>
-                            ${book.dateStarted ? `<p><strong>Started:</strong> ${new Date(book.dateStarted).toLocaleDateString()}</p>` : ''}
-                            ${book.dateFinished ? `<p><strong>Finished:</strong> ${new Date(book.dateFinished).toLocaleDateString()}</p>` : ''}
-                        </div>
-                    ` : ''}
+
 
                     ${book.status === 'Reading' ? `
                         <div class="reading-controls">
@@ -811,6 +1075,8 @@ class BookshelfLibrary {
         document.getElementById('add-book-modal').classList.remove('hidden');
         // Initialize date fields based on default status (TBR)
         this.handleStatusChange('TBR');
+        // Initialize series fields based on default value (No)
+        this.handleSeriesChange('No');
     }
 
     showStatisticsModal() {
@@ -844,42 +1110,58 @@ class BookshelfLibrary {
         }
     }
 
-    closeModals() {
+    closeModals(clearEditingState = true) {
         document.querySelectorAll('.modal').forEach(modal => {
             modal.classList.add('hidden');
         });
 
-        // Reset add book form
-        document.getElementById('add-book-form').reset();
+        // Only reset form if we're not preserving editing state
+        if (clearEditingState) {
+            // Reset add book form
+            document.getElementById('add-book-form').reset();
 
-        // Reset form title and button text
-        const addModal = document.getElementById('add-book-modal');
-        const title = addModal.querySelector('h2');
-        const submitBtn = addModal.querySelector('button[type="submit"]');
+            // Clear format checkboxes to prevent accumulation
+            document.querySelectorAll('input[name="format"]').forEach(cb => {
+                cb.checked = false;
+            });
 
-        title.textContent = 'Add New Book';
-        submitBtn.textContent = 'Add Book';
+            // Reset form title and button text
+            const addModal = document.getElementById('add-book-modal');
+            const title = addModal.querySelector('h2');
+            const submitBtn = addModal.querySelector('button[type="submit"]');
 
-        // Clear all form fields
-        document.getElementById('book-image-url').value = '';
-        document.getElementById('book-synopsis').value = '';
+            title.textContent = 'Add New Book';
+            submitBtn.textContent = 'Add Book';
 
-        // Reset image preview
-        this.updateImagePreview('');
+            // Clear all form fields
+            document.getElementById('book-image-url').value = '';
+            document.getElementById('book-isbn').value = '';
+            document.getElementById('book-publisher').value = '';
+            document.getElementById('book-synopsis').value = '';
 
-        // Reset character count
-        this.updateCharacterCount(0);
+            // Reset image preview
+            this.updateImagePreview('');
 
-        // Reset date fields visibility
-        this.handleStatusChange('TBR');
+            // Reset character count
+            this.updateCharacterCount(0);
 
-        // Reset star rating
-        const stars = document.querySelectorAll('.star-rating .star');
-        this.setStarRating(stars, 0);
-        document.getElementById('book-rating').value = '';
+            // Reset date fields visibility
+            this.handleStatusChange('TBR');
 
-        // Clear editing state
-        this.editingBook = null;
+            // Reset star rating
+            const stars = document.querySelectorAll('.star-rating .star');
+            this.setStarRating(stars, 0);
+            document.getElementById('book-rating').value = '';
+
+            // Reset series fields
+            document.getElementById('book-series').value = 'No';
+            document.getElementById('series-name').value = '';
+            document.getElementById('series-number').value = '';
+            this.handleSeriesChange('No');
+
+            // Clear editing state
+            this.editingBook = null;
+        }
     }
 
     async handleAddBook() {
@@ -893,10 +1175,18 @@ class BookshelfLibrary {
         const genre = document.getElementById('book-genre').value.trim();
         const synopsis = document.getElementById('book-synopsis').value.trim();
         const pages = parseInt(document.getElementById('book-pages').value) || 0;
-        const datePublished = document.getElementById('book-date-published').value || null;
+        const datePublished = document.getElementById('book-date-published').value;
+        const publisher = document.getElementById('book-publisher').value.trim();
         const imageUrl = document.getElementById('book-image-url').value.trim();
-        const selectedFormats = this.getSelectedFormats();
+        const isbn = document.getElementById('book-isbn').value.trim();
+        const selectedFormats = this.cleanFormatArray(this.getSelectedFormats());
         const rating = parseInt(document.getElementById('book-rating').value) || 0;
+
+        // Series data
+        const seriesDropdown = document.getElementById('book-series').value;
+        const isSeries = seriesDropdown === 'Yes';
+        const seriesName = document.getElementById('series-name').value.trim();
+        const seriesNumber = parseFloat(document.getElementById('series-number').value) || null;
 
         if (!title) {
             this.showNotification('Please enter a book title', 'error');
@@ -918,8 +1208,20 @@ class BookshelfLibrary {
             this.showNotification('Please enter a valid page count', 'error');
             return;
         }
+        if (!datePublished) {
+            this.showNotification('Please enter a publication date', 'error');
+            return;
+        }
+        if (!publisher) {
+            this.showNotification('Please enter a publisher', 'error');
+            return;
+        }
         if (!imageUrl) {
             this.showNotification('Please enter an image URL', 'error');
+            return;
+        }
+        if (!isbn) {
+            this.showNotification('Please enter an ISBN', 'error');
             return;
         }
         if (selectedFormats.length === 0) {
@@ -929,6 +1231,18 @@ class BookshelfLibrary {
         if (rating === 0) {
             this.showNotification('Please provide a rating', 'error');
             return;
+        }
+
+        // Validate series fields if series is checked
+        if (isSeries) {
+            if (!seriesName) {
+                this.showNotification('Please enter a series name', 'error');
+                return;
+            }
+            if (!seriesNumber || seriesNumber <= 0) {
+                this.showNotification('Please enter a valid series number (e.g., 1, 1.5, 2)', 'error');
+                return;
+            }
         }
 
         // Show loading state
@@ -949,6 +1263,8 @@ class BookshelfLibrary {
                     synopsis: synopsis,
                     pageCount: pages,
                     datePublished: datePublished,
+                    publisher: publisher,
+                    isbn: isbn,
                     status: document.getElementById('book-status').value,
                     format: selectedFormats,
                     userRating: rating,
@@ -956,6 +1272,10 @@ class BookshelfLibrary {
                     // Update date fields
                     dateStarted: document.getElementById('book-date-started').value || null,
                     dateFinished: document.getElementById('book-date-finished').value || null,
+                    // Update series fields
+                    series: isSeries,
+                    seriesName: isSeries ? seriesName : null,
+                    seriesNumber: isSeries ? seriesNumber : null,
                     // Keep existing metadata
                     dateAdded: this.editingBook.dateAdded,
                     averageRating: this.editingBook.averageRating || 0,
@@ -991,13 +1311,14 @@ class BookshelfLibrary {
             } else {
                 // Adding new book
                 bookData = {
-                    isbn: `manual-${Date.now()}`,
+                    isbn: isbn,
                     title: title,
                     author: author,
                     genre: genre,
                     synopsis: synopsis,
                     pageCount: pages,
                     datePublished: datePublished,
+                    publisher: publisher,
                     status: document.getElementById('book-status').value,
                     format: selectedFormats,
                     userRating: rating,
@@ -1006,7 +1327,10 @@ class BookshelfLibrary {
                     dateFinished: document.getElementById('book-date-finished').value || null,
                     currentPage: 0,
                     coverUrl: imageUrl,
-                    averageRating: 0
+                    averageRating: 0,
+                    series: isSeries,
+                    seriesName: isSeries ? seriesName : null,
+                    seriesNumber: isSeries ? seriesNumber : null
                 };
 
                 // Set reading dates based on status for new books
@@ -1022,7 +1346,10 @@ class BookshelfLibrary {
 
             // Handle editing vs adding
             if (this.editingBook) {
-                // Update existing book
+                // Update existing book in database
+                await this.updateBookInDatabase(bookData);
+
+                // Update local array
                 const index = this.books.findIndex(b => b.isbn === this.editingBook.isbn);
                 if (index !== -1) {
                     this.books[index] = bookData;
@@ -1035,28 +1362,37 @@ class BookshelfLibrary {
                         this.showNotification(`"${bookData.title}" has been updated!`, 'success');
                     }
                 }
-                this.editingBook = null;
             } else {
-                // Adding new book - check for duplicates
+                // Adding new book - check for duplicates (exclude current book if editing)
                 const existingBook = this.books.find(book =>
-                    book.isbn === bookData.isbn ||
-                    (book.title.toLowerCase() === bookData.title.toLowerCase() &&
-                     book.author.toLowerCase() === bookData.author.toLowerCase())
+                    // Skip the book being edited if we're in edit mode
+                    book !== this.editingBook &&
+                    (book.isbn === bookData.isbn ||
+                     (book.title.toLowerCase() === bookData.title.toLowerCase() &&
+                      book.author.toLowerCase() === bookData.author.toLowerCase()))
                 );
 
                 if (existingBook) {
-                    alert('This book already exists in your library!');
+                    this.showNotification('This book already exists in your library!', 'error');
                     return;
                 }
 
+                // Add to database
+                await this.addBookToDatabase(bookData);
+
+                // Add to local array
                 this.books.push(bookData);
                 this.showNotification(`"${bookData.title}" has been added to your library!`, 'success');
             }
+
+            // Clear editing state after processing
+            this.editingBook = null;
+
+            this.populateSeriesFilter(); // Repopulate series filter after adding/updating book
             this.applyFilters();
             this.updateStats();
             this.closeModals();
 
-            // In a real implementation, this would save to the server
             console.log('Book processed:', bookData);
 
         } catch (error) {
@@ -1069,11 +1405,97 @@ class BookshelfLibrary {
         }
     }
 
+    // Add book to Supabase database
+    async addBookToDatabase(bookData) {
+        if (!this.supabase) {
+            console.log('No database connection, skipping database save');
+            return;
+        }
+
+        try {
+            const dbBook = this.convertToDbFormat(bookData);
+            const { data, error } = await this.supabase
+                .from('reading_nook')
+                .insert([dbBook])
+                .select();
+
+            if (error) {
+                throw error;
+            }
+
+            console.log('✅ Book added to database:', data);
+        } catch (error) {
+            console.error('❌ Error adding book to database:', error);
+            this.showNotification('Book added locally but failed to save to database', 'warning');
+        }
+    }
+
+    // Update book in Supabase database
+    async updateBookInDatabase(bookData) {
+        if (!this.supabase) {
+            console.log('No database connection, skipping database update');
+            return;
+        }
+
+        try {
+            const dbBook = this.convertToDbFormat(bookData);
+            const { data, error } = await this.supabase
+                .from('reading_nook')
+                .update(dbBook)
+                .eq('isbn', bookData.isbn)
+                .select();
+
+            if (error) {
+                throw error;
+            }
+
+            console.log('✅ Book updated in database:', data);
+        } catch (error) {
+            console.error('❌ Error updating book in database:', error);
+            this.showNotification('Book updated locally but failed to save to database', 'warning');
+        }
+    }
+
+    // Delete book from Supabase database
+    async deleteBookFromDatabase(isbn) {
+        if (!this.supabase) {
+            console.log('No database connection, skipping database delete');
+            return;
+        }
+
+        try {
+            const { error } = await this.supabase
+                .from('reading_nook')
+                .delete()
+                .eq('isbn', isbn);
+
+            if (error) {
+                throw error;
+            }
+
+            console.log('✅ Book deleted from database');
+        } catch (error) {
+            console.error('❌ Error deleting book from database:', error);
+            this.showNotification('Book deleted locally but failed to remove from database', 'warning');
+        }
+    }
+
     showNotification(message, type = 'info') {
         // Create notification element
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
         notification.textContent = message;
+
+        // Calculate position based on existing notifications
+        const existingNotifications = document.querySelectorAll('.notification');
+        let topPosition = 20; // Start at 20px from top
+
+        existingNotifications.forEach(existing => {
+            const rect = existing.getBoundingClientRect();
+            topPosition += rect.height + 10; // Add height + 10px margin
+        });
+
+        notification.style.top = `${topPosition}px`;
 
         // Add to page
         document.body.appendChild(notification);
@@ -1084,8 +1506,25 @@ class BookshelfLibrary {
         // Remove notification after 3 seconds
         setTimeout(() => {
             notification.classList.remove('show');
-            setTimeout(() => document.body.removeChild(notification), 300);
+            setTimeout(() => {
+                if (document.body.contains(notification)) {
+                    document.body.removeChild(notification);
+                }
+                // Reposition remaining notifications
+                this.repositionNotifications();
+            }, 300);
         }, 3000);
+    }
+
+    repositionNotifications() {
+        const notifications = document.querySelectorAll('.notification');
+        let topPosition = 20;
+
+        notifications.forEach(notification => {
+            notification.style.top = `${topPosition}px`;
+            const rect = notification.getBoundingClientRect();
+            topPosition += rect.height + 10;
+        });
     }
 
 
@@ -1117,19 +1556,21 @@ class BookshelfLibrary {
             // Store the original book for updating BEFORE opening the modal
             this.editingBook = book;
 
-            // Close current modal first
-            this.closeModals();
+            // Close current modal first (but preserve editing state)
+            this.closeModals(false);
 
             // Wait a moment for the modal to close, then open the edit form
             setTimeout(() => {
                 // Pre-fill the add book form with existing data
-                document.getElementById('book-image-url').value = book.coverUrl || '';
                 document.getElementById('book-title').value = book.title || '';
                 document.getElementById('book-author').value = book.author || '';
                 document.getElementById('book-genre').value = book.genre || '';
+                document.getElementById('book-image-url').value = book.coverUrl || '';
+                document.getElementById('book-isbn').value = book.isbn || '';
                 document.getElementById('book-synopsis').value = book.synopsis || '';
                 document.getElementById('book-pages').value = book.pageCount || '';
                 document.getElementById('book-date-published').value = book.datePublished || '';
+                document.getElementById('book-publisher').value = book.publisher || '';
                 document.getElementById('book-status').value = book.status || 'TBR';
 
                 // Update image preview
@@ -1138,14 +1579,21 @@ class BookshelfLibrary {
                 // Update character count
                 this.updateCharacterCount((book.synopsis || '').length);
 
-                // Handle format - convert old "Both" format to array
+                // Handle format - convert old "Both" format to array and clean it
                 let bookFormats = book.format;
                 if (bookFormats === 'Both') {
                     bookFormats = ['Physical', 'Kindle'];
                 } else if (!Array.isArray(bookFormats)) {
                     bookFormats = [bookFormats || 'Physical'];
                 }
-                this.setSelectedFormats(bookFormats);
+
+                // Clean the format array to remove duplicates and limit to 3
+                bookFormats = this.cleanFormatArray(bookFormats);
+
+                // Set formats after a small delay to avoid timing issues with form reset
+                setTimeout(() => {
+                    this.setSelectedFormats(bookFormats);
+                }, 50);
 
                 // Handle date fields based on status
                 this.handleStatusChange(book.status || 'TBR');
@@ -1161,6 +1609,23 @@ class BookshelfLibrary {
                 const rating = book.userRating || 0;
                 document.getElementById('book-rating').value = rating;
                 this.setStarRating(stars, rating);
+
+                // Handle series fields
+                const seriesDropdown = document.getElementById('book-series');
+                const seriesNameField = document.getElementById('series-name');
+                const seriesNumberField = document.getElementById('series-number');
+
+                if (book.series) {
+                    seriesDropdown.value = 'Yes';
+                    seriesNameField.value = book.seriesName || '';
+                    seriesNumberField.value = book.seriesNumber || '';
+                    this.handleSeriesChange('Yes');
+                } else {
+                    seriesDropdown.value = 'No';
+                    seriesNameField.value = '';
+                    seriesNumberField.value = '';
+                    this.handleSeriesChange('No');
+                }
 
                 // Image URL field remains enabled during editing
 
@@ -1178,17 +1643,27 @@ class BookshelfLibrary {
         }
     }
 
-    deleteBook(isbn) {
+    async deleteBook(isbn) {
         const book = this.books.find(b => b.isbn === isbn);
         if (book) {
             const confirmMessage = `Are you sure you want to remove "${book.title}" by ${book.author || 'Unknown Author'} from your library?\n\nThis action cannot be undone.`;
 
             if (confirm(confirmMessage)) {
-                this.books = this.books.filter(b => b.isbn !== isbn);
-                this.applyFilters();
-                this.updateStats();
-                this.closeModals();
-                this.showNotification(`"${book.title}" has been removed from your library.`, 'info');
+                try {
+                    // Delete from database first
+                    await this.deleteBookFromDatabase(isbn);
+
+                    // Remove from local array
+                    this.books = this.books.filter(b => b.isbn !== isbn);
+                    this.populateSeriesFilter(); // Repopulate series filter after deleting book
+                    this.applyFilters();
+                    this.updateStats();
+                    this.closeModals();
+                    this.showNotification(`"${book.title}" has been removed from your library.`, 'success');
+                } catch (error) {
+                    console.error('Error deleting book:', error);
+                    this.showNotification('Failed to delete book. Please try again.', 'error');
+                }
             }
         }
     }

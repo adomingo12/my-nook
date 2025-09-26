@@ -6,6 +6,7 @@
     <title>My Reading Nook</title>
     <link rel="icon" type="image/png" href="book_image.png">
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <!-- Main Title Bar -->
@@ -374,43 +375,57 @@
                     </div>
                 </div>
 
-                <!-- Word Count Filter -->
+                <!-- Publisher Filter -->
                 <div class="filter-category">
-                    <button class="filter-category-toggle" data-category="wordCount">
-                        <span class="filter-category-title">Word Count</span>
+                    <button class="filter-category-toggle" data-category="publisher">
+                        <span class="filter-category-title">Publisher</span>
                         <span class="filter-toggle-icon">▼</span>
                     </button>
-                    <div class="filter-options" id="wordCount-options">
+                    <div class="filter-options scrollable-filter" id="publisher-options">
                         <label class="filter-option">
-                            <input type="checkbox" name="wordCount" value="0-25000">
-                            <span>0-25k words</span>
+                            <input type="checkbox" name="publisher" value="Ace">
+                            <span>Ace</span>
                         </label>
                         <label class="filter-option">
-                            <input type="checkbox" name="wordCount" value="25001-50000">
-                            <span>25k-50k words</span>
+                            <input type="checkbox" name="publisher" value="Atria Publishing Group">
+                            <span>Atria Publishing Group</span>
                         </label>
                         <label class="filter-option">
-                            <input type="checkbox" name="wordCount" value="50001-75000">
-                            <span>50k-75k words</span>
+                            <input type="checkbox" name="publisher" value="Ballantine Books">
+                            <span>Ballantine Books</span>
                         </label>
                         <label class="filter-option">
-                            <input type="checkbox" name="wordCount" value="75001-100000">
-                            <span>75k-100k words</span>
+                            <input type="checkbox" name="publisher" value="Bantam Spectra">
+                            <span>Bantam Spectra</span>
                         </label>
                         <label class="filter-option">
-                            <input type="checkbox" name="wordCount" value="100001-125000">
-                            <span>100k-125k words</span>
+                            <input type="checkbox" name="publisher" value="Del Rey">
+                            <span>Del Rey</span>
                         </label>
                         <label class="filter-option">
-                            <input type="checkbox" name="wordCount" value="125001-150000">
-                            <span>125k-150k words</span>
+                            <input type="checkbox" name="publisher" value="George Allen & Unwin">
+                            <span>George Allen & Unwin</span>
                         </label>
                         <label class="filter-option">
-                            <input type="checkbox" name="wordCount" value="150001+">
-                            <span>150k+ words</span>
+                            <input type="checkbox" name="publisher" value="Harper Collins">
+                            <span>Harper Collins</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="publisher" value="Houghton Mifflin Harcourt">
+                            <span>Houghton Mifflin Harcourt</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="publisher" value="Little, Brown and Company">
+                            <span>Little, Brown and Company</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="publisher" value="Mariner Books Classics">
+                            <span>Mariner Books Classics</span>
                         </label>
                     </div>
                 </div>
+
+
 
                 <!-- Rating Filter -->
                 <div class="filter-category">
@@ -482,39 +497,74 @@
                         <span class="filter-category-title">Date Published</span>
                         <span class="filter-toggle-icon">▼</span>
                     </button>
-                    <div class="filter-options" id="datePublished-options">
+                    <div class="filter-options scrollable-filter" id="datePublished-options">
                         <label class="filter-option">
-                            <input type="checkbox" name="datePublished" value="2020-2024">
-                            <span>2020-2024</span>
+                            <input type="checkbox" name="datePublished" value="2020-2029">
+                            <span>2020-2029</span>
                         </label>
                         <label class="filter-option">
-                            <input type="checkbox" name="datePublished" value="2015-2019">
-                            <span>2015-2019</span>
+                            <input type="checkbox" name="datePublished" value="2010-2019">
+                            <span>2010-2019</span>
                         </label>
                         <label class="filter-option">
-                            <input type="checkbox" name="datePublished" value="2010-2014">
-                            <span>2010-2014</span>
+                            <input type="checkbox" name="datePublished" value="2000-2009">
+                            <span>2000-2009</span>
                         </label>
                         <label class="filter-option">
-                            <input type="checkbox" name="datePublished" value="2005-2009">
-                            <span>2005-2009</span>
+                            <input type="checkbox" name="datePublished" value="1990-1999">
+                            <span>1990-1999</span>
                         </label>
                         <label class="filter-option">
-                            <input type="checkbox" name="datePublished" value="2000-2004">
-                            <span>2000-2004</span>
+                            <input type="checkbox" name="datePublished" value="1980-1989">
+                            <span>1980-1989</span>
                         </label>
                         <label class="filter-option">
-                            <input type="checkbox" name="datePublished" value="1995-1999">
-                            <span>1995-1999</span>
+                            <input type="checkbox" name="datePublished" value="1970-1979">
+                            <span>1970-1979</span>
                         </label>
                         <label class="filter-option">
-                            <input type="checkbox" name="datePublished" value="1990-1994">
-                            <span>1990-1994</span>
+                            <input type="checkbox" name="datePublished" value="1960-1969">
+                            <span>1960-1969</span>
                         </label>
                         <label class="filter-option">
-                            <input type="checkbox" name="datePublished" value="before-1990">
-                            <span>Before 1990</span>
+                            <input type="checkbox" name="datePublished" value="1950-1959">
+                            <span>1950-1959</span>
                         </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="datePublished" value="1940-1949">
+                            <span>1940-1949</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="datePublished" value="1930-1939">
+                            <span>1930-1939</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="datePublished" value="1920-1929">
+                            <span>1920-1929</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="datePublished" value="1910-1919">
+                            <span>1910-1919</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="datePublished" value="1900-1909">
+                            <span>1900-1909</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="datePublished" value="before-1900">
+                            <span>Before 1900</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Series Filter -->
+                <div class="filter-category">
+                    <button class="filter-category-toggle" data-category="series">
+                        <span class="filter-category-title">Series</span>
+                        <span class="filter-toggle-icon">▼</span>
+                    </button>
+                    <div class="filter-options scrollable-filter" id="series-options">
+                        <!-- Series options will be populated dynamically -->
                     </div>
                 </div>
             </div>
@@ -530,7 +580,7 @@
                                 <button id="add-book-btn" class="add-book-btn" title="Add New Book">Add Book</button>
                                 <button id="statistics-btn" class="statistics-btn" title="Library Statistics">Statistics</button>
                                 <div class="search-container">
-                                    <input type="text" id="search-input" placeholder="Search by title, author, format, genre..." class="search-input">
+                                    <input type="text" id="search-input" placeholder="Search by title, author, etc..." class="search-input">
                                     <button id="clear-search" class="clear-search" aria-label="Clear search">×</button>
                                 </div>
                             </div>
@@ -541,12 +591,16 @@
                                     <option value="title-desc">Title (Z-A)</option>
                                     <option value="author-asc">Author (A-Z)</option>
                                     <option value="author-desc">Author (Z-A)</option>
+                                    <option value="publisher-asc">Publisher (A-Z)</option>
+                                    <option value="publisher-desc">Publisher (Z-A)</option>
                                     <option value="dateAdded-desc">Date Added (Newest First)</option>
                                     <option value="dateAdded-asc">Date Added (Oldest First)</option>
-                                    <option value="dateFinished-desc">Date Finished (Recent First)</option>
-                                    <option value="dateFinished-asc">Date Finished (Oldest First)</option>
                                     <option value="datePublished-desc">Date Published (Newest First)</option>
                                     <option value="datePublished-asc">Date Published (Oldest First)</option>
+                                    <option value="dateStarted-desc">Date Started (Recent First)</option>
+                                    <option value="dateStarted-asc">Date Started (Oldest First)</option>
+                                    <option value="dateFinished-desc">Date Finished (Recent First)</option>
+                                    <option value="dateFinished-asc">Date Finished (Oldest First)</option>
                                     <option value="rating-desc">Rating (Highest First)</option>
                                     <option value="rating-asc">Rating (Lowest First)</option>
                                     <option value="pageCount-desc">Page Count (Most Pages)</option>
@@ -681,8 +735,8 @@
                     <div class="form-with-preview">
                         <div class="form-fields">
                             <div class="form-group">
-                                <label for="book-image-url">Image URL:</label>
-                                <input type="url" id="book-image-url" placeholder="Enter cover image URL..." required>
+                                <label for="book-isbn">ISBN-13:</label>
+                                <input type="text" id="book-isbn" placeholder="Enter ISBN-13..." maxlength="20" required>
                             </div>
                             <div class="form-group">
                                 <label for="book-title">Title:</label>
@@ -765,6 +819,16 @@
                                     </select>
                                 </div>
                             </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="book-image-url">Image URL:</label>
+                                    <input type="url" id="book-image-url" placeholder="Enter cover image URL..." required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="book-pages">Page Count:</label>
+                                    <input type="number" id="book-pages" placeholder="Number of pages..." min="1" required>
+                                </div>
+                            </div>
                             <div class="form-group">
                                 <label for="book-synopsis">Synopsis:</label>
                                 <textarea id="book-synopsis" placeholder="Enter book synopsis..." maxlength="500" required></textarea>
@@ -784,8 +848,8 @@
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label for="book-pages">Page Count:</label>
-                                    <input type="number" id="book-pages" placeholder="Number of pages..." min="1" required>
+                                    <label for="book-publisher">Publisher:</label>
+                                    <input type="text" id="book-publisher" placeholder="Enter publisher..." required>
                                 </div>
                             </div>
                             <div id="date-started-row" class="form-row" style="display: none;">
@@ -801,7 +865,7 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="book-date-published">Date Published:</label>
-                                    <input type="date" id="book-date-published" placeholder="Publication date...">
+                                    <input type="date" id="book-date-published" placeholder="Publication date..." required>
                                 </div>
                                 <div class="form-group">
                                     <label>My Rating:</label>
@@ -815,6 +879,7 @@
                                     <input type="hidden" id="book-rating" value="">
                                 </div>
                             </div>
+
                         </div>
                         <div class="image-preview">
                             <div class="preview-container">
@@ -839,6 +904,25 @@
                                         <input type="checkbox" name="format" value="Audiobook" id="format-audiobook">
                                         <span>Audiobook</span>
                                     </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="book-series">Part of Series:</label>
+                                <select id="book-series" required>
+                                    <option value="No">No</option>
+                                    <option value="Yes">Yes</option>
+                                </select>
+                            </div>
+
+                            <div id="series-fields" class="series-fields" style="display: none;">
+                                <div class="form-group">
+                                    <label for="series-name">Series Name:</label>
+                                    <input type="text" id="series-name" placeholder="Enter series name...">
+                                </div>
+                                <div class="form-group">
+                                    <label for="series-number">Book Number in Series:</label>
+                                    <input type="number" id="series-number" min="0.1" step="0.1" placeholder="Enter series number...">
                                 </div>
                             </div>
                         </div>

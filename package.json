@@ -7,6 +7,7 @@
     "update-library": "node scripts/update-library.js",
     "serve": "python -m http.server 8000",
     "serve-node": "npx http-server -p 8000 -c-1",
+    "test-db": "node test-database.js",
     "test": "echo \"No tests specified\" && exit 0"
   },
   "keywords": [
@@ -30,5 +31,8 @@
     "url": "."
   },
   "homepage": ".",
-  "dependencies": {}
+  "dependencies": {
+    "pg": "^8.11.3",
+    "dotenv": "^16.3.1"
+  }
 }

@@ -235,6 +235,32 @@ label, span, p, h1, h2, h3, h4, h5, h6 {
     background: var(--accent-color);
 }
 
+/* Scrollable filter styling for publisher and date published */
+.scrollable-filter.expanded {
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+/* Custom scrollbar for scrollable filters */
+.scrollable-filter::-webkit-scrollbar {
+    width: 6px;
+}
+
+.scrollable-filter::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 3px;
+}
+
+.scrollable-filter::-webkit-scrollbar-thumb {
+    background: var(--text-secondary);
+    border-radius: 3px;
+}
+
+.scrollable-filter::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-color);
+}
+
 .filter-option {
     display: flex;
     align-items: center;
@@ -1020,6 +1046,7 @@ label, span, p, h1, h2, h3, h4, h5, h6 {
 
 .modal-body {
     padding: 2rem;
+    padding-top: 3rem;
 }
 
 .modal-body h2 {
@@ -1158,6 +1185,47 @@ label, span, p, h1, h2, h3, h4, h5, h6 {
     border-color: #d1d5db;
 }
 
+/* Date input styling for better calendar icon visibility */
+.form-group input[type="date"] {
+    position: relative;
+    color-scheme: light dark;
+}
+
+/* Dark mode specific styling for date inputs */
+[data-theme="dark"] .form-group input[type="date"] {
+    color-scheme: dark;
+}
+
+/* Webkit specific styling for date input calendar icon */
+.form-group input[type="date"]::-webkit-calendar-picker-indicator {
+    background: transparent;
+    bottom: 0;
+    color: var(--text-primary);
+    cursor: pointer;
+    height: auto;
+    left: auto;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: auto;
+    filter: invert(0.7);
+    padding: 4px;
+}
+
+/* Dark mode calendar icon styling */
+[data-theme="dark"] .form-group input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.8) brightness(1.2);
+}
+
+/* Hover effect for calendar icon */
+.form-group input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    filter: invert(0.5);
+}
+
+[data-theme="dark"] .form-group input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    filter: invert(1) brightness(1.4);
+}
+
 /* Form Rows */
 .form-row {
     display: grid;
@@ -1227,6 +1295,63 @@ label, span, p, h1, h2, h3, h4, h5, h6 {
 
 .checkbox-label input[type="checkbox"]:checked + .checkmark {
     display: none;
+}
+
+/* Series Fields */
+.series-fields {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: var(--bg-tertiary);
+    border-radius: 8px;
+    border-left: 3px solid #d946ef;
+    transition: all 0.3s ease;
+}
+
+.series-fields .form-group {
+    margin-bottom: 1rem;
+}
+
+.series-fields .form-group:last-child {
+    margin-bottom: 0;
+}
+
+.series-fields label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.series-fields input {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-secondary);
+}
+
+.series-fields input:focus {
+    border-color: #d946ef;
+    box-shadow: 0 0 0 2px rgba(217, 70, 239, 0.1);
+}
+
+/* Series Badge in Book Detail */
+.book-series-info {
+    margin: 0.75rem 0;
+}
+
+.series-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #d946ef, #c026d3);
+    color: white;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(217, 70, 239, 0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.series-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(217, 70, 239, 0.3);
 }
 
 /* Star Rating */
@@ -1362,16 +1487,92 @@ label, span, p, h1, h2, h3, h4, h5, h6 {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
+.cover-reading-info {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.reading-dates {
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+}
+
+.current-page-info {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+
+
+
+
+.title-with-badges {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+    margin-right: 3rem;
+}
+
 .book-detail-info h3 {
     font-size: 1.5rem;
-    margin-bottom: 0.5rem;
+    margin: 0;
     color: var(--text-primary);
+    flex: 1;
+    min-width: 200px;
 }
+
+.title-badges {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.title-badges .badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    font-weight: 600;
+    min-width: 50px;
+    text-align: center;
+}
+
+
 
 .book-detail-author {
     font-size: 1.1rem;
     color: var(--text-tertiary);
+    margin-bottom: 0.5rem;
+}
+
+.book-publisher {
+    font-size: 1rem;
+    color: var(--text-secondary);
     margin-bottom: 1rem;
+    font-style: italic;
+}
+
+.book-ratings {
+    margin: 1rem 0 1.5rem 0;
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.rating-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.rating-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
 }
 
 .book-detail-meta {
@@ -1434,7 +1635,6 @@ label, span, p, h1, h2, h3, h4, h5, h6 {
 /* Notification Styles */
 .notification {
     position: fixed;
-    top: 20px;
     right: 20px;
     padding: 1rem 1.5rem;
     border-radius: 8px;
@@ -1442,9 +1642,10 @@ label, span, p, h1, h2, h3, h4, h5, h6 {
     font-weight: 500;
     z-index: 2000;
     transform: translateX(400px);
-    transition: transform 0.3s ease;
+    transition: all 0.3s ease;
     max-width: 300px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    margin-bottom: 10px;
 }
 
 .notification.show {
