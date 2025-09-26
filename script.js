@@ -15,7 +15,12 @@ class BookshelfLibrary {
             datePublished: [],
             series: []
         };
-        this.currentSort = 'title-asc';
+        this.currentSort = 'author-series-asc';
+
+        // Authentication properties
+        this.isAuthenticated = false;
+        this.pendingAction = null; // Store the action to perform after authentication
+        this.editingBook = null;
 
         // Initialize Supabase client
         this.supabase = null;
@@ -65,6 +70,7 @@ class BookshelfLibrary {
         this.populateSeriesFilter(); // Populate series filter after books are loaded
         this.applyFilters(); // Use applyFilters instead of renderBooks directly
         this.updateStats();
+        this.updateAuthStatus(); // Initialize authentication status display
     }
 
     // Test database connection
@@ -193,6 +199,11 @@ class BookshelfLibrary {
             this.toggleDarkMode(e.target.checked);
         });
 
+        // Logout button
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            this.logout();
+        });
+
         // Initialize dark mode from localStorage
         this.initializeDarkMode();
 
@@ -281,6 +292,17 @@ class BookshelfLibrary {
             } else {
                 this.showNotification('Please enter a valid ISBN first', 'warning');
             }
+        });
+
+        // Authentication form
+        document.getElementById('auth-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleAuthentication();
+        });
+
+        document.getElementById('cancel-auth').addEventListener('click', () => {
+            this.closeModals();
+            this.pendingAction = null;
         });
     }
 
@@ -923,10 +945,48 @@ class BookshelfLibrary {
     }
 
     sortBooks() {
-        const [field, direction] = this.currentSort.split('-');
+        const [field, ...directionParts] = this.currentSort.split('-');
+        const direction = directionParts.join('-'); // Handle multi-part directions like 'series-asc'
 
         this.filteredBooks.sort((a, b) => {
-            // If series filter is active, prioritize series sorting
+            // Special handling for author-series sorting
+            if (field === 'author' && direction === 'series-asc') {
+                // 1. First sort by author
+                const aAuthor = (a.author || '').toLowerCase();
+                const bAuthor = (b.author || '').toLowerCase();
+
+                if (aAuthor !== bAuthor) {
+                    return aAuthor.localeCompare(bAuthor);
+                }
+
+                // 2. If same author, sort by title (but consider series)
+                const aTitle = (a.title || '').toLowerCase();
+                const bTitle = (b.title || '').toLowerCase();
+
+                // 3. If both books are part of series, prioritize series order
+                if (a.series && b.series && a.seriesName && b.seriesName) {
+                    const aSeriesName = a.seriesName.toLowerCase();
+                    const bSeriesName = b.seriesName.toLowerCase();
+
+                    // If same series, sort by series number
+                    if (aSeriesName === bSeriesName) {
+                        const aSeriesNumber = parseFloat(a.seriesNumber) || 0;
+                        const bSeriesNumber = parseFloat(b.seriesNumber) || 0;
+
+                        if (aSeriesNumber !== bSeriesNumber) {
+                            return aSeriesNumber - bSeriesNumber;
+                        }
+                    } else {
+                        // Different series, sort by series name
+                        return aSeriesName.localeCompare(bSeriesName);
+                    }
+                }
+
+                // If not both series books, or same series number, sort by title
+                return aTitle.localeCompare(bTitle);
+            }
+
+            // If series filter is active, prioritize series sorting for other sort types
             if (this.currentFilters.series.length > 0) {
                 // First sort by series name
                 const aSeriesName = a.seriesName || '';
@@ -1191,6 +1251,12 @@ class BookshelfLibrary {
     }
 
     showAddBookModal() {
+        if (!this.isAuthenticated) {
+            this.pendingAction = 'add-book';
+            this.showAuthModal();
+            return;
+        }
+
         document.getElementById('add-book-modal').classList.remove('hidden');
         // Initialize date fields based on default status (TBR)
         this.handleStatusChange('TBR');
@@ -1204,6 +1270,81 @@ class BookshelfLibrary {
 
     showSettingsModal() {
         document.getElementById('settings-modal').classList.remove('hidden');
+    }
+
+    showAuthModal() {
+        // Clear any previous error messages
+        document.getElementById('auth-error').classList.add('hidden');
+        // Clear form fields
+        document.getElementById('auth-username').value = '';
+        document.getElementById('auth-password').value = '';
+        // Show the modal
+        document.getElementById('auth-modal').classList.remove('hidden');
+        // Focus on username field
+        setTimeout(() => {
+            document.getElementById('auth-username').focus();
+        }, 100);
+    }
+
+    handleAuthentication() {
+        const username = document.getElementById('auth-username').value.trim();
+        const password = document.getElementById('auth-password').value;
+        const errorDiv = document.getElementById('auth-error');
+
+        // Get credentials from config file
+        const validCredentials = window.CONFIG?.AUTH_CREDENTIALS || [
+            // Fallback credentials if config is not available
+            { username: 'admin', password: 'bookworm123' },
+            { username: 'user', password: 'password' }
+        ];
+
+        const isValid = validCredentials.some(cred =>
+            cred.username === username && cred.password === password
+        );
+
+        if (isValid) {
+            this.isAuthenticated = true;
+            this.updateAuthStatus();
+            this.closeModals();
+            this.showNotification('✅ Authentication successful!', 'success');
+
+            // Execute the pending action
+            if (this.pendingAction) {
+                if (this.pendingAction === 'add-book') {
+                    this.showAddBookModal();
+                } else if (this.pendingAction.type === 'edit-book') {
+                    this.editBook(this.pendingAction.isbn);
+                }
+                this.pendingAction = null;
+            }
+        } else {
+            errorDiv.classList.remove('hidden');
+            // Clear password field for security
+            document.getElementById('auth-password').value = '';
+            document.getElementById('auth-password').focus();
+        }
+    }
+
+    logout() {
+        this.isAuthenticated = false;
+        this.updateAuthStatus();
+        this.closeModals();
+        this.showNotification('🔓 Logged out successfully', 'info');
+    }
+
+    updateAuthStatus() {
+        const statusText = document.getElementById('auth-status-text');
+        const logoutBtn = document.getElementById('logout-btn');
+
+        if (this.isAuthenticated) {
+            statusText.textContent = '🔓 Authenticated';
+            statusText.style.color = '#059669';
+            logoutBtn.classList.remove('hidden');
+        } else {
+            statusText.textContent = '🔒 Not Authenticated';
+            statusText.style.color = 'var(--text-secondary)';
+            logoutBtn.classList.add('hidden');
+        }
     }
 
     initializeDarkMode() {
@@ -1670,6 +1811,12 @@ class BookshelfLibrary {
     }
 
     editBook(isbn) {
+        if (!this.isAuthenticated) {
+            this.pendingAction = { type: 'edit-book', isbn: isbn };
+            this.showAuthModal();
+            return;
+        }
+
         const book = this.books.find(b => b.isbn === isbn);
         if (book) {
             // Store the original book for updating BEFORE opening the modal

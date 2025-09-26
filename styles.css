@@ -418,6 +418,52 @@ label, span, p, h1, h2, h3, h4, h5, h6 {
 
 
 
+/* Authentication Modal Styles */
+.auth-modal-content {
+    max-width: 400px;
+    width: 90%;
+}
+
+.auth-description {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+    text-align: center;
+    font-size: 0.95rem;
+}
+
+.auth-error {
+    background: #fee;
+    color: #c53030;
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+    text-align: center;
+    font-size: 0.9rem;
+    border: 1px solid #fed7d7;
+}
+
+.auth-error.hidden {
+    display: none;
+}
+
+.auth-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.auth-status span {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.logout-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    min-width: auto;
+}
+
 /* Statistics Modal Styles */
 .statistics-modal-content {
     max-width: 600px;

@@ -590,6 +590,7 @@
                             <div class="sort-control">
                                 <label for="sort-select">Sort by:</label>
                                 <select id="sort-select">
+                                    <option value="author-series-asc" selected>Default</option>
                                     <option value="title-asc">Title (A-Z)</option>
                                     <option value="title-desc">Title (Z-A)</option>
                                     <option value="author-asc">Author (A-Z)</option>
@@ -678,6 +679,12 @@
                             </div>
                         </label>
                     </div>
+                    <div class="setting-item">
+                        <div class="auth-status">
+                            <span id="auth-status-text">🔒 Not Authenticated</span>
+                            <button id="logout-btn" class="btn-secondary logout-btn hidden">Logout</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -719,6 +726,35 @@
                         <span class="stat-value" id="books-this-year">0</span>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Authentication Modal -->
+    <div id="auth-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content auth-modal-content">
+            <button class="modal-close" aria-label="Close modal">×</button>
+            <div class="modal-body">
+                <h2>🔐 Authentication Required</h2>
+                <p class="auth-description">Please enter your credentials to add or edit books:</p>
+                <form id="auth-form">
+                    <div class="form-group">
+                        <label for="auth-username">Username:</label>
+                        <input type="text" id="auth-username" placeholder="Enter username..." required autocomplete="username">
+                    </div>
+                    <div class="form-group">
+                        <label for="auth-password">Password:</label>
+                        <input type="password" id="auth-password" placeholder="Enter password..." required autocomplete="current-password">
+                    </div>
+                    <div class="auth-error hidden" id="auth-error">
+                        ❌ Invalid credentials. Please try again.
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" id="cancel-auth">Cancel</button>
+                        <button type="submit" class="btn-primary">Authenticate</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -835,7 +871,7 @@
                                 <label for="book-synopsis">Synopsis:</label>
                                 <textarea id="book-synopsis" placeholder="Enter book synopsis..." maxlength="1000" required></textarea>
                                 <div class="character-count">
-                                    <span id="synopsis-count">0</span>/1000 characters
+                                    <span id="synopsis-count">0</span>/1200 characters
                                 </div>
                             </div>
                             <div class="form-row">
