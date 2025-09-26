@@ -1774,6 +1774,11 @@ label, span, p, h1, h2, h3, h4, h5, h6 {
     background: #ef4444;
 }
 
+.notification-warning {
+    background: #f59e0b;
+    color: white;
+}
+
 .notification-info {
     background: #a855f7;
 }
