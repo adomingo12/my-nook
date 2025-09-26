@@ -1,20 +1,25 @@
 # 📚 My Reading Nook by Alicia Domingo
 
-A beautiful, modern digital library application for managing your personal book collection. Features a clean interface with advanced filtering, dark mode support, comprehensive book management, and detailed reading statistics.
+A beautiful, modern digital library application for managing your personal book collection. Features a clean interface with advanced filtering, dark mode support, comprehensive book management, detailed reading statistics, cloud database integration, and automatic book information lookup via Google Books API.
 
 ## ✨ Features
 
 ### 📚 Core Library Management
 - **Modern Book Grid**: Clean card-based layout displaying book covers with status and format badges
-- **Multi-Format Support**: Track books across Physical, Kindle, and Audiobook formats
+- **Multi-Format Support**: Track books across Physical, Kindle, and Audiobook formats with duplicate prevention
 - **Reading Status Tracking**: Organize books by TBR (To Be Read), Reading, Finished, and DNF (Did Not Finish)
-- **Personal Ratings**: Rate books and track your reading preferences
-- **Synopsis & Metadata**: Store detailed book information including page counts, publication dates, genres, and personal notes
+- **Personal Ratings**: Rate books with 5-star system (required for finished books, optional for others)
+- **Series Management**: Track book series with names and decimal numbering (1, 1.5, 2, etc.)
+- **Synopsis & Metadata**: Store detailed book information with 1000-character synopsis limit
+- **Google Books Integration**: Auto-fill book information using ISBN-13 lookup
+- **Cloud Database**: Supabase PostgreSQL integration with real-time sync and offline fallback
 
 ### 🔍 Advanced Search & Organization
 - **Multi-Field Search**: Search across title, author, format, and genre simultaneously
-- **Comprehensive Filtering**: Filter by genre, page count ranges, format, status, word count, average rating, and reading time
+- **Comprehensive Filtering**: Filter by genre, page count ranges, format, status, series, publisher, and reading time
+- **Series Filtering**: Filter by series name with automatic series-based sorting
 - **Collapsible Filter Categories**: Organized sidebar with expandable filter sections
+- **Smart Sorting**: Series-aware sorting that prioritizes series name and number when filtering
 - **Flexible Sorting**: Sort by various criteria with ascending/descending options
 - **Clear Filters**: Easy reset functionality for all active filters
 
@@ -30,13 +35,18 @@ A beautiful, modern digital library application for managing your personal book 
 - **Reading Insights**: Total books, pages read, estimated reading time, and completion rates
 - **Format Breakdown**: Statistics by physical books, e-books, and audiobooks
 - **Status Overview**: Visual breakdown of your reading pipeline
+- **Notification System**: Stacked notifications with auto-positioning and smooth animations
 
 ### 📝 Enhanced Book Management
 - **Detailed Add/Edit Forms**: Two-column layout with image preview functionality
+- **Google Books Auto-Fill**: Enter ISBN-13 to automatically populate book information
+- **Manual Lookup Button**: Trigger book information lookup with dedicated button
 - **Genre Dropdown**: Pre-populated with 20 popular genres for consistency
-- **Format Checkboxes**: Multi-select format options with visual feedback
-- **Character Counting**: Real-time character count for synopsis field
-- **Form Validation**: Comprehensive validation with user-friendly error messages
+- **Format Management**: Multi-select format options with max 3 formats and duplicate prevention
+- **Series Support**: Dropdown for series (Yes/No) with conditional name and number fields
+- **Decimal Series Numbers**: Support for series numbers like 1.5, 2.5 for special editions
+- **Character Counting**: Real-time character count for 1000-character synopsis field
+- **Smart Validation**: Context-aware validation (rating required only for finished books)
 - **Image URL Preview**: Live preview of book covers when entering image URLs
 
 ### 🎨 Visual Design
@@ -48,35 +58,48 @@ A beautiful, modern digital library application for managing your personal book 
 
 ## 🚀 Quick Start
 
-### Simple Setup (Recommended)
+### Database Setup (Recommended)
+1. **Create Supabase Account**: Sign up at [supabase.com](https://supabase.com)
+2. **Create New Project**: Set up a new Supabase project
+3. **Configure Database**: Run the provided SQL schema to create the `reading_nook` table
+4. **Get Credentials**: Copy your project URL and anon key
+5. **Update Config**: Add your credentials to `config.js`
+
+### Local Setup (Fallback)
 1. **Download or Clone**: Get the repository files to your local machine
-2. **Open in Browser**: Simply open `index.html` in any modern web browser
-3. **Start Adding Books**: Click "Add Book" to begin building your library
-4. **Toggle Dark Mode**: Use the Settings button to switch between light and dark themes
+2. **Create Config**: Copy your Supabase credentials to `config.js` (see `config.js` for format)
+3. **Open in Browser**: Simply open `index.html` in any modern web browser
+4. **Start Adding Books**: Click "Add Book" to begin building your library
+5. **Toggle Dark Mode**: Use the Settings button to switch between light and dark themes
 
 ### File Structure
 ```
 my-reading-nook/
-├── index.html          # Main application file
-├── styles.css          # Complete styling with dark mode support
-├── script.js           # JavaScript functionality and book management
-├── book_image.png      # Book icon for branding
+├── index.html                              # Main application file
+├── styles.css                              # Complete styling with dark mode support
+├── script.js                               # JavaScript functionality and book management
+├── config.js                               # Supabase configuration (not in git)
+├── book_image.png                          # Book icon for branding
+├── .gitignore                              # Excludes config.js from version control
+├── *.sql                                   # Database schema and migration files
 └── data/
-    └── books.json      # Your book collection data (auto-created)
+    └── books.json                          # Local fallback data (auto-created)
 ```
 
 ## 📖 Usage Guide
 
 ### Adding Your First Book
 1. **Click "Add Book"**: Located in the main content area next to the sort controls
-2. **Fill in Details**:
+2. **Auto-Fill Option**: Enter an ISBN-13 and tab out to automatically populate book information
+3. **Manual Entry**: Fill in details manually:
    - Enter title, author, and genre (from dropdown)
    - Add image URL for book cover (with live preview)
    - Set page count and publication date
-   - Select reading status and choose format(s): Physical, Kindle, and/or Audiobook
-   - Write a synopsis (with character counter)
-   - Add start/end dates and personal rating
-3. **Save**: Click "Add Book" to add to your collection
+   - Select reading status and choose format(s): Physical, Kindle, and/or Audiobook (max 3)
+   - Add series information if applicable (name and decimal number)
+   - Write a synopsis (1000 character limit with counter)
+   - Add start/end dates and personal rating (required for finished books)
+4. **Save**: Click "Add Book" to save to your cloud database
 
 ### Managing Your Library
 - **Search**: Use the header search bar to find books across title, author, format, and genre
@@ -85,20 +108,34 @@ my-reading-nook/
   - Page count ranges
   - Format types
   - Reading status
-  - Word count estimates
-  - Average ratings
+  - Series names (with series-aware sorting)
+  - Publisher
   - Estimated reading time
-- **Sort**: Choose from various sorting options in the main area
+- **Sort**: Choose from various sorting options with series-aware sorting when filtering by series
 - **View Details**: Click any book card to see full information and edit options
+- **Real-time Sync**: Changes automatically sync to your cloud database
 
 ### Using Dark Mode
 1. **Access Settings**: Click the "Settings" button in the top-right corner
 2. **Toggle Theme**: Use the dark mode switch to change themes
 3. **Automatic Saving**: Your preference is saved and restored on future visits
 
-## � Book Data Format
+### Using Google Books API
+1. **Enter ISBN-13**: Type or paste a 13-digit ISBN in the ISBN field
+2. **Auto-Lookup**: Tab out of the field or click the 🔍 button to trigger lookup
+3. **Review Information**: Google Books will auto-fill title, author, synopsis, cover image, etc.
+4. **Edit as Needed**: All auto-filled information can be modified before saving
+5. **Manual Entry**: You can still add books manually without using the API
 
-Books are automatically stored in `data/books.json` with the following structure:
+### Configuration Setup
+1. **Create config.js**: Copy your Supabase credentials to the config file
+2. **Database Connection**: The app will automatically connect to your Supabase database
+3. **Fallback Mode**: If database connection fails, the app uses local storage
+4. **Security**: config.js is excluded from version control via .gitignore
+
+## 📊 Book Data Format
+
+Books are stored in Supabase PostgreSQL database with local JSON fallback. The data structure includes:
 
 ```json
 {
@@ -113,12 +150,17 @@ Books are automatically stored in `data/books.json` with the following structure
       "userRating": 5,
       "pageCount": 400,
       "datePublished": "2019-06-13",
-      "imageUrl": "https://example.com/book-cover.jpg",
-      "synopsis": "A captivating novel about...",
+      "publisher": "Atria Books",
+      "isbn": "9781501161933",
+      "coverUrl": "https://example.com/book-cover.jpg",
+      "synopsis": "A captivating novel about... (up to 1000 characters)",
       "dateAdded": "2025-01-15",
       "dateStarted": "2025-01-20",
       "dateFinished": "2025-02-10",
       "currentPage": 400,
+      "series": true,
+      "seriesName": "Standalone",
+      "seriesNumber": 1.0,
       "estimatedWords": 100000,
       "estimatedReadingTime": "6.7 hours"
     }
@@ -127,11 +169,14 @@ Books are automatically stored in `data/books.json` with the following structure
 ```
 
 ### Key Features of Data Structure:
-- **Multi-Format Support**: `format` is an array supporting multiple formats per book
-- **Comprehensive Metadata**: Includes reading dates, progress tracking, and estimates
+- **Multi-Format Support**: `format` is an array supporting up to 3 formats per book with duplicate prevention
+- **Series Management**: Boolean `series` flag with optional `seriesName` and decimal `seriesNumber`
+- **Comprehensive Metadata**: Includes reading dates, progress tracking, publisher, and ISBN
 - **Unique IDs**: Each book has a unique identifier for reliable data management
-- **Flexible Ratings**: User ratings from 1-5 stars
-- **Rich Content**: Synopsis field with character limit and validation
+- **Smart Ratings**: User ratings from 1-5 stars (required for finished books, optional for others)
+- **Rich Content**: Synopsis field with 1000-character limit and real-time validation
+- **Google Books Integration**: Auto-populated fields from ISBN lookup
+- **Cloud Sync**: Real-time synchronization with Supabase PostgreSQL database
 
 ## 🎨 Customization
 
@@ -167,16 +212,18 @@ The application uses CSS variables for easy theme customization in `styles.css`:
 - **Font Family**: Modern system font stack for optimal readability across all devices
 - **Title Font**: Times New Roman for the main "My Reading Nook" title for elegance
 - **Font Sizes**: Responsive sizing with proper hierarchy
-- **Character Limits**: Synopsis field limited to 500 characters with live counter
+- **Character Limits**: Synopsis field limited to 1000 characters with live counter and color-coded warnings
 
 ## 🐛 Troubleshooting
 
 ### Common Issues
 
 **Books not displaying**:
-- Ensure `data/books.json` exists and contains valid JSON
-- Check browser console for JavaScript errors
-- Verify all required fields are present in book data
+- Check browser console for database connection errors
+- Verify `config.js` exists and contains valid Supabase credentials
+- Ensure Supabase project is active and accessible
+- Check that the `reading_nook` table exists in your database
+- Fallback: App will use local storage if database connection fails
 
 **Dark mode not working**:
 - Clear browser cache and localStorage
@@ -188,10 +235,18 @@ The application uses CSS variables for easy theme customization in `styles.css`:
 - Check that images support CORS if loading from external sources
 - Use the image preview in the add/edit form to test URLs
 
+**Google Books API not working**:
+- Verify you have an internet connection
+- Check browser console for API errors
+- Try the manual lookup button (🔍) if auto-lookup fails
+- ISBN must be 10+ characters for lookup to trigger
+- Not all books may be available in Google Books database
+
 **Filter/Search issues**:
 - Clear all active filters using the "Clear All Filters" button
 - Refresh the page to reset the application state
 - Check that book data includes the fields you're searching/filtering by
+- Series filtering automatically enables series-based sorting
 
 **Mobile responsiveness**:
 - Clear browser cache
@@ -212,10 +267,12 @@ MIT License - feel free to use this project for personal, educational, or commer
 
 ## 🙏 Acknowledgments
 
+- **Supabase** for providing excellent PostgreSQL database-as-a-service
+- **Google Books API** for comprehensive book information lookup
 - **System Font Stack** for optimal cross-platform readability
 - **CSS Grid and Flexbox** for responsive layout capabilities
 - **CSS Custom Properties** for seamless dark mode implementation
-- **LocalStorage API** for persistent user preferences
+- **LocalStorage API** for persistent user preferences and offline fallback
 - **Modern JavaScript** for clean, maintainable code architecture
 
 ---
@@ -234,19 +291,24 @@ MIT License - feel free to use this project for personal, educational, or commer
 
 **📚 Comprehensive Book Management**
 - ✅ Add/Edit/Delete books with detailed forms
-- ✅ Multi-format support (Physical, Kindle, Audiobook)
+- ✅ Multi-format support (Physical, Kindle, Audiobook) with max 3 formats and duplicate prevention
 - ✅ Reading status tracking (TBR, Reading, Finished, DNF)
-- ✅ Personal ratings and synopsis storage
+- ✅ Personal ratings (required for finished books, optional for others)
+- ✅ Series management with names and decimal numbering (1, 1.5, 2, etc.)
+- ✅ Synopsis storage with 1000-character limit and real-time validation
+- ✅ Google Books API integration for automatic book information lookup
+- ✅ Cloud database storage with Supabase PostgreSQL
 - ✅ Reading progress tracking with visual indicators
 - ✅ Genre management with dropdown selection
 
 **🔍 Advanced Search & Filtering**
 - ✅ Multi-field search (title, author, format, genre)
 - ✅ Comprehensive filter sidebar with collapsible categories
-- ✅ Range-based filtering (pages, words, reading time)
+- ✅ Series filtering with automatic series-based sorting
+- ✅ Range-based filtering (pages, reading time)
 - ✅ Multiple selection filters with OR logic
 - ✅ Clear all filters functionality
-- ✅ Flexible sorting options
+- ✅ Smart sorting with series-aware logic
 
 **📊 Statistics & Analytics**
 - ✅ Comprehensive statistics modal
@@ -254,6 +316,7 @@ MIT License - feel free to use this project for personal, educational, or commer
 - ✅ Format and status breakdowns
 - ✅ Estimated reading time calculations
 - ✅ Word count estimations
+- ✅ Stacked notification system with auto-positioning
 
 **⚙️ Settings & Preferences**
 - ✅ Dark mode toggle with localStorage persistence
@@ -265,21 +328,26 @@ MIT License - feel free to use this project for personal, educational, or commer
 
 **My Reading Nook** is a complete, production-ready application with:
 
-- **Zero Dependencies**: Pure HTML, CSS, and JavaScript - no build process required
-- **Instant Setup**: Simply open `index.html` in any modern browser
-- **Data Persistence**: Automatic saving to localStorage with JSON export capability
+- **Cloud Database**: Supabase PostgreSQL integration with real-time sync
+- **Google Books API**: Automatic book information lookup via ISBN
+- **Offline Fallback**: Local storage backup when database is unavailable
+- **Zero Build Process**: Pure HTML, CSS, and JavaScript - no compilation required
+- **Instant Setup**: Configure database credentials and open `index.html`
 - **Professional Design**: Modern interface with attention to detail
 - **Accessibility**: WCAG-compliant contrast ratios and keyboard navigation
 - **Mobile Optimized**: Fully responsive design for all devices
+- **Secure Configuration**: Environment variables kept separate from source code
 
 ### 🎯 Getting Started
 
 1. **Download**: Clone or download the repository
-2. **Open**: Launch `index.html` in your preferred browser
-3. **Explore**: Try the dark mode toggle and add your first book
-4. **Customize**: Modify colors and styles in `styles.css` as desired
-5. **Enjoy**: Start building your personal digital library!
+2. **Setup Database**: Create a Supabase project and configure the database schema
+3. **Configure**: Add your Supabase credentials to `config.js`
+4. **Open**: Launch `index.html` in your preferred browser
+5. **Test**: Try adding a book with ISBN lookup and explore dark mode
+6. **Customize**: Modify colors and styles in `styles.css` as desired
+7. **Enjoy**: Start building your personal digital library!
 
-**Perfect for**: Personal book tracking, reading goal management, library organization, and book discovery.
+**Perfect for**: Personal book tracking, reading goal management, library organization, book discovery, and series management.
 
 Happy reading! 📚✨

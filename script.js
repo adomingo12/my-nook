@@ -25,12 +25,15 @@ class BookshelfLibrary {
     }
 
     initializeSupabase() {
-        // Supabase configuration
-        const SUPABASE_URL = 'https://bsnirvyfiyofgakmxfyn.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzbmlydnlmaXlvZmdha214ZnluIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1ODc0OTI3OSwiZXhwIjoyMDc0MzI1Mjc5fQ.RKFSHw0Ju5_W_TQiA8GSCD2RF4cMATGTm8IemPyFGbE';
+        // Supabase configuration from config.js
+        if (!window.CONFIG) {
+            console.error('❌ Configuration not loaded. Make sure config.js is included.');
+            this.showNotification('Configuration error. Using local storage.', 'error');
+            return;
+        }
 
         try {
-            this.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            this.supabase = window.supabase.createClient(window.CONFIG.SUPABASE_URL, window.CONFIG.SUPABASE_KEY);
             console.log('✅ Supabase client initialized');
         } catch (error) {
             console.error('❌ Failed to initialize Supabase:', error);
@@ -179,13 +182,6 @@ class BookshelfLibrary {
         // Initialize dark mode from localStorage
         this.initializeDarkMode();
 
-
-
-
-
-
-
-
         // Status change handler for date fields
         document.getElementById('book-status').addEventListener('change', (e) => {
             this.handleStatusChange(e.target.value);
@@ -193,8 +189,6 @@ class BookshelfLibrary {
 
         // Star rating functionality
         this.initializeStarRating();
-
-
 
         // Sort control
         document.getElementById('sort-select').addEventListener('change', (e) => {
@@ -256,6 +250,120 @@ class BookshelfLibrary {
         document.getElementById('book-series').addEventListener('change', (e) => {
             this.handleSeriesChange(e.target.value);
         });
+
+        // ISBN lookup functionality
+        document.getElementById('book-isbn').addEventListener('blur', (e) => {
+            const isbn = e.target.value.trim();
+            if (isbn && isbn.length >= 10) {
+                this.lookupBookByISBN(isbn);
+            }
+        });
+
+        // Manual ISBN lookup button
+        document.getElementById('lookup-isbn-btn').addEventListener('click', () => {
+            const isbn = document.getElementById('book-isbn').value.trim();
+            if (isbn && isbn.length >= 10) {
+                this.lookupBookByISBN(isbn);
+            } else {
+                this.showNotification('Please enter a valid ISBN first', 'warning');
+            }
+        });
+    }
+
+    async lookupBookByISBN(isbn) {
+        // Show loading indicator
+        const isbnField = document.getElementById('book-isbn');
+        const lookupBtn = document.getElementById('lookup-isbn-btn');
+        const originalPlaceholder = isbnField.placeholder;
+
+        isbnField.placeholder = 'Looking up book info...';
+        isbnField.disabled = true;
+        lookupBtn.disabled = true;
+        lookupBtn.textContent = '⏳';
+
+        try {
+            // Clean ISBN (remove hyphens, spaces)
+            const cleanISBN = isbn.replace(/[-\s]/g, '');
+
+            // Call Google Books API
+            const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanISBN}`);
+            const data = await response.json();
+
+            if (data.items && data.items.length > 0) {
+                const book = data.items[0].volumeInfo;
+
+                // Only fill empty fields to allow user editing
+                this.fillBookFormFromAPI(book, cleanISBN);
+
+                this.showNotification('Book information loaded from Google Books!', 'success');
+            } else {
+                this.showNotification('No book found with this ISBN. Please fill in manually.', 'info');
+            }
+        } catch (error) {
+            console.error('Error looking up book:', error);
+            this.showNotification('Failed to lookup book information. Please fill in manually.', 'warning');
+        } finally {
+            // Restore ISBN field and button
+            isbnField.placeholder = originalPlaceholder;
+            isbnField.disabled = false;
+            lookupBtn.disabled = false;
+            lookupBtn.textContent = '🔍';
+        }
+    }
+
+    fillBookFormFromAPI(bookData, isbn) {
+        // Helper function to safely fill field if it's empty
+        const fillIfEmpty = (fieldId, value) => {
+            const field = document.getElementById(fieldId);
+            if (field && !field.value.trim() && value) {
+                field.value = value;
+
+                // Trigger events for fields that need them
+                if (fieldId === 'book-image-url') {
+                    this.updateImagePreview(value);
+                } else if (fieldId === 'book-synopsis') {
+                    this.updateCharacterCount(value.length);
+                }
+            }
+        };
+
+        // Fill basic information
+        fillIfEmpty('book-title', bookData.title || '');
+        fillIfEmpty('book-author', bookData.authors ? bookData.authors.join(', ') : '');
+        fillIfEmpty('book-publisher', bookData.publisher || '');
+        fillIfEmpty('book-synopsis', bookData.description || '');
+        fillIfEmpty('book-pages', bookData.pageCount || '');
+
+        // Handle publication date
+        if (bookData.publishedDate) {
+            // Google Books sometimes returns just year, sometimes full date
+            let pubDate = bookData.publishedDate;
+            if (pubDate.length === 4) {
+                pubDate = `${pubDate}-01-01`; // Default to January 1st if only year
+            } else if (pubDate.length === 7) {
+                pubDate = `${pubDate}-01`; // Default to 1st if only year-month
+            }
+            fillIfEmpty('book-date-published', pubDate);
+        }
+
+        // Handle cover image
+        if (bookData.imageLinks) {
+            const coverUrl = bookData.imageLinks.large ||
+                           bookData.imageLinks.medium ||
+                           bookData.imageLinks.small ||
+                           bookData.imageLinks.thumbnail || '';
+            fillIfEmpty('book-image-url', coverUrl);
+        }
+
+        // Handle genre/categories
+        if (bookData.categories && bookData.categories.length > 0) {
+            fillIfEmpty('book-genre', bookData.categories[0]);
+        }
+
+
+
+        // Set ISBN (clean version)
+        document.getElementById('book-isbn').value = isbn;
     }
 
     async loadBooks() {
@@ -343,7 +451,6 @@ class BookshelfLibrary {
             pageCount: dbBook.page_count,
             datePublished: dbBook.date_published,
             publisher: dbBook.publisher,
-            averageRating: dbBook.average_rating || 0,
             series: dbBook.series || false,
             seriesName: dbBook.series_name || null,
             seriesNumber: dbBook.series_number || null
@@ -372,7 +479,6 @@ class BookshelfLibrary {
             page_count: appBook.pageCount,
             date_published: appBook.datePublished,
             publisher: appBook.publisher,
-            average_rating: appBook.averageRating || null,
             series: appBook.series || false,
             series_name: appBook.series && appBook.seriesName ? appBook.seriesName : null,
             series_number: appBook.series && appBook.seriesNumber ? parseFloat(appBook.seriesNumber) : null
@@ -418,6 +524,18 @@ class BookshelfLibrary {
     handleStatusChange(status) {
         const dateStartedRow = document.getElementById('date-started-row');
         const dateFinishedField = document.getElementById('date-finished-field');
+        const ratingHint = document.querySelector('.optional-hint');
+
+        // Update rating requirement hint based on status
+        if (ratingHint) {
+            if (status === 'Finished') {
+                ratingHint.textContent = '(Required for finished books)';
+                ratingHint.style.color = '#ef4444'; // Red to indicate required
+            } else {
+                ratingHint.textContent = '(Optional)';
+                ratingHint.style.color = '#6b7280'; // Gray to indicate optional
+            }
+        }
 
         if (status === 'Reading') {
             // Show date started row, hide date finished field within it
@@ -599,13 +717,13 @@ class BookshelfLibrary {
         if (counter) {
             counter.textContent = count;
 
-            // Change color based on character count
-            if (count > 450) {
-                counter.style.color = '#ef4444'; // Red
-            } else if (count > 400) {
-                counter.style.color = '#f59e0b'; // Yellow
+            // Change color based on character count (updated for 1000 char limit)
+            if (count > 900) {
+                counter.style.color = '#ef4444'; // Red - approaching limit
+            } else if (count > 800) {
+                counter.style.color = '#f59e0b'; // Yellow - getting close
             } else {
-                counter.style.color = '#6b7280'; // Gray
+                counter.style.color = '#6b7280'; // Gray - plenty of room
             }
         }
     }
@@ -917,12 +1035,6 @@ class BookshelfLibrary {
         // Calculate reading time at 60 pages per hour
         const totalHours = Math.round(totalPages / 60);
 
-        // Calculate average rating
-        const ratedBooks = this.books.filter(book => book.userRating > 0);
-        const avgRating = ratedBooks.length > 0
-            ? (ratedBooks.reduce((sum, book) => sum + book.userRating, 0) / ratedBooks.length).toFixed(1)
-            : 0;
-
         // Calculate books read this year
         const currentYear = new Date().getFullYear();
         const booksThisYear = this.books.filter(book =>
@@ -936,7 +1048,6 @@ class BookshelfLibrary {
         document.getElementById('books-read').textContent = finishedBooks;
         document.getElementById('currently-reading').textContent = currentlyReading;
         document.getElementById('to-be-read').textContent = toBeRead;
-        document.getElementById('average-rating').textContent = avgRating;
         document.getElementById('total-pages').textContent = totalPages.toLocaleString();
         document.getElementById('reading-time').textContent = `${totalHours} hr`;
         document.getElementById('books-this-year').textContent = booksThisYear;
@@ -950,7 +1061,6 @@ class BookshelfLibrary {
         const estimatedWords = (book.pageCount || 0) * 275;
         const estimatedHours = Math.round(estimatedWords / 250 / 60 * 10) / 10;
         const userStars = this.generateStars(book.userRating || 0);
-        const apiStars = this.generateStars(Math.round(book.averageRating || 0));
 
         modalBody.innerHTML = `
             <div class="book-detail">
@@ -996,11 +1106,6 @@ class BookshelfLibrary {
                         <div class="rating-item">
                             <span class="rating-label">My Rating:</span>
                             <div class="stars">${userStars}</div>
-                        </div>
-                        <div class="rating-item">
-                            <span class="rating-label">Average Rating:</span>
-                            <div class="stars">${apiStars}</div>
-                            <small>${(book.averageRating || 0).toFixed(1)}/5</small>
                         </div>
                     </div>
 
@@ -1181,6 +1286,7 @@ class BookshelfLibrary {
         const isbn = document.getElementById('book-isbn').value.trim();
         const selectedFormats = this.cleanFormatArray(this.getSelectedFormats());
         const rating = parseInt(document.getElementById('book-rating').value) || 0;
+        const status = document.getElementById('book-status').value;
 
         // Series data
         const seriesDropdown = document.getElementById('book-series').value;
@@ -1228,8 +1334,9 @@ class BookshelfLibrary {
             this.showNotification('Please select at least one format', 'error');
             return;
         }
-        if (rating === 0) {
-            this.showNotification('Please provide a rating', 'error');
+        // Only require rating for finished books
+        if (status === 'Finished' && rating === 0) {
+            this.showNotification('Please provide a rating for finished books', 'error');
             return;
         }
 
@@ -1278,7 +1385,6 @@ class BookshelfLibrary {
                     seriesNumber: isSeries ? seriesNumber : null,
                     // Keep existing metadata
                     dateAdded: this.editingBook.dateAdded,
-                    averageRating: this.editingBook.averageRating || 0,
                     lastApiUpdate: this.editingBook.lastApiUpdate
                 };
 
@@ -1327,7 +1433,6 @@ class BookshelfLibrary {
                     dateFinished: document.getElementById('book-date-finished').value || null,
                     currentPage: 0,
                     coverUrl: imageUrl,
-                    averageRating: 0,
                     series: isSeries,
                     seriesName: isSeries ? seriesName : null,
                     seriesNumber: isSeries ? seriesNumber : null

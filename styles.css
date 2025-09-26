@@ -1664,6 +1664,82 @@ label, span, p, h1, h2, h3, h4, h5, h6 {
     background: #a855f7;
 }
 
+/* API Hint Styling */
+.api-hint {
+    font-size: 0.8rem;
+    color: var(--accent-color);
+    font-weight: normal;
+    opacity: 0.8;
+    margin-left: 0.5rem;
+}
+
+.api-hint:hover {
+    opacity: 1;
+}
+
+/* Optional field hint styling */
+.optional-hint {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-weight: normal;
+    opacity: 0.8;
+    margin-left: 0.5rem;
+}
+
+/* Loading state for ISBN field */
+#book-isbn:disabled {
+    background-color: #f0f0f0;
+    color: #666;
+    cursor: wait;
+}
+
+#book-isbn:disabled::placeholder {
+    color: var(--accent-color);
+    font-style: italic;
+}
+
+/* ISBN Input Group */
+.isbn-input-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.isbn-input-group input {
+    flex: 1;
+}
+
+.lookup-btn {
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.75rem;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lookup-btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+}
+
+.lookup-btn:active {
+    transform: translateY(0);
+}
+
+.lookup-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
 /* Statistics Dashboard */
 .stats-dashboard {
     background: white;
