@@ -25,15 +25,29 @@ class BookshelfLibrary {
     }
 
     initializeSupabase() {
-        // Supabase configuration from config.js
-        if (!window.CONFIG) {
-            console.error('❌ Configuration not loaded. Make sure config.js is included.');
-            this.showNotification('Configuration error. Using local storage.', 'error');
+        // Supabase configuration
+        let supabaseUrl, supabaseKey;
+
+        if (window.CONFIG && window.CONFIG.SUPABASE_URL && window.CONFIG.SUPABASE_KEY) {
+            supabaseUrl = window.CONFIG.SUPABASE_URL;
+            supabaseKey = window.CONFIG.SUPABASE_KEY;
+
+            // Check if using placeholder key
+            if (supabaseKey === 'YOUR_SUPABASE_ANON_KEY_HERE') {
+                console.error('❌ Please replace placeholder with your actual Supabase anon key');
+                this.showNotification('Database configuration incomplete. Using local storage.', 'warning');
+                return;
+            }
+
+            console.log('✅ Using Supabase configuration');
+        } else {
+            console.error('❌ No Supabase configuration found. Using local storage.');
+            this.showNotification('Database unavailable. Using local storage.', 'warning');
             return;
         }
 
         try {
-            this.supabase = window.supabase.createClient(window.CONFIG.SUPABASE_URL, window.CONFIG.SUPABASE_KEY);
+            this.supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
             console.log('✅ Supabase client initialized');
         } catch (error) {
             console.error('❌ Failed to initialize Supabase:', error);
