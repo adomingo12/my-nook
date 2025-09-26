@@ -138,7 +138,7 @@ label, span, p, h1, h2, h3, h4, h5, h6 {
     padding: 1.5rem;
     overflow-y: auto;
     flex-shrink: 0;
-    height: 100%;
+    height: calc(100vh - 100px);
     position: fixed;
     top: 100px;
     left: 0;
@@ -464,39 +464,107 @@ label, span, p, h1, h2, h3, h4, h5, h6 {
     min-width: auto;
 }
 
+/* Settings Authentication Section */
+.setting-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-primary);
+}
+
+.setting-section h3 {
+    margin: 0 0 1rem 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.auth-form-container {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    border: 1px solid var(--border-primary);
+}
+
+.auth-form-container.hidden {
+    display: none;
+}
+
+.auth-description {
+    margin: 0 0 1rem 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.auth-error {
+    margin: 0.5rem 0;
+    padding: 0.5rem;
+    background: #fef2f2;
+    color: #dc2626;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.auth-error.hidden {
+    display: none;
+}
+
 /* Statistics Modal Styles */
 .statistics-modal-content {
-    max-width: 600px;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow-y: auto;
+    background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
+    border: 2px solid #ec4899;
+}
+
+.statistics-modal-content h2 {
+    color: #be185d;
+    text-align: center;
+    margin-bottom: 2rem;
+    font-size: 1.8rem;
+    font-weight: 700;
 }
 
 .statistics-modal-content .stats-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    margin-top: 1.5rem;
+    gap: 1.5rem;
+    padding: 2rem;
 }
 
 .statistics-modal-content .stat-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem;
-    background: var(--bg-tertiary);
-    border-radius: 8px;
-    border: 1px solid var(--border-primary);
-    transition: background-color 0.3s ease, border-color 0.3s ease;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #ffffff 0%, #fdf2f8 100%);
+    border-radius: 12px;
+    border: 2px solid #f9a8d4;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(236, 72, 153, 0.1);
+}
+
+.statistics-modal-content .stat-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(236, 72, 153, 0.2);
+    border-color: #ec4899;
 }
 
 .statistics-modal-content .stat-label {
-    font-weight: 500;
-    color: var(--text-secondary);
+    font-weight: 600;
+    color: #be185d;
+    font-size: 1rem;
 }
 
 .statistics-modal-content .stat-value {
-    font-weight: 600;
-    color: #059669;
-    font-size: 1.1rem;
+    font-weight: 700;
+    color: #ec4899;
+    font-size: 1.3rem;
 }
+
+
 
 
 
@@ -1799,38 +1867,7 @@ label, span, p, h1, h2, h3, h4, h5, h6 {
 
 
 
-.year-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-}
 
-.year-stat-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem 1rem;
-    background: white;
-    border-radius: 6px;
-    border: 1px solid #e5e7eb;
-    transition: all 0.2s ease;
-}
-
-.year-stat-item:hover {
-    border-color: #d946ef;
-    box-shadow: 0 2px 4px rgba(217, 70, 239, 0.1);
-}
-
-.year-stat-year {
-    font-weight: 600;
-    color: #1f2937;
-    font-size: 1.1rem;
-}
-
-.year-stat-count {
-    color: #d946ef;
-    font-weight: 500;
-}
 
 .stat-item {
     text-align: center;

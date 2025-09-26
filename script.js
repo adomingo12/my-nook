@@ -68,6 +68,8 @@ class BookshelfLibrary {
         await this.loadBooks();
         this.initializeFilters();
         this.populateSeriesFilter(); // Populate series filter after books are loaded
+        this.populateGenreFilter(); // Populate genre filter after books are loaded
+        this.populatePublisherFilter(); // Populate publisher filter after books are loaded
         this.applyFilters(); // Use applyFilters instead of renderBooks directly
         this.updateStats();
         this.updateAuthStatus(); // Initialize authentication status display
@@ -298,11 +300,6 @@ class BookshelfLibrary {
         document.getElementById('auth-form').addEventListener('submit', (e) => {
             e.preventDefault();
             this.handleAuthentication();
-        });
-
-        document.getElementById('cancel-auth').addEventListener('click', () => {
-            this.closeModals();
-            this.pendingAction = null;
         });
     }
 
@@ -753,10 +750,10 @@ class BookshelfLibrary {
         if (counter) {
             counter.textContent = count;
 
-            // Change color based on character count (updated for 1000 char limit)
-            if (count > 900) {
+            // Change color based on character count (updated for 1200 char limit)
+            if (count > 1100) {
                 counter.style.color = '#ef4444'; // Red - approaching limit
-            } else if (count > 800) {
+            } else if (count > 1000) {
                 counter.style.color = '#f59e0b'; // Yellow - getting close
             } else {
                 counter.style.color = '#6b7280'; // Gray - plenty of room
@@ -944,6 +941,74 @@ class BookshelfLibrary {
         });
     }
 
+    populateGenreFilter() {
+        const genreContainer = document.getElementById('genre-options');
+        if (!genreContainer) return;
+
+        // Get all unique genres from books
+        const genres = [...new Set(
+            this.books
+                .filter(book => book.genre && book.genre.trim())
+                .map(book => book.genre.trim())
+        )].sort();
+
+        // Clear existing options
+        genreContainer.innerHTML = '';
+
+        // Add genre options
+        genres.forEach(genre => {
+            const label = document.createElement('label');
+            label.className = 'filter-option';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.name = 'genre';
+            checkbox.value = genre;
+            checkbox.addEventListener('change', () => this.updateFilters());
+
+            const span = document.createElement('span');
+            span.textContent = genre;
+
+            label.appendChild(checkbox);
+            label.appendChild(span);
+            genreContainer.appendChild(label);
+        });
+    }
+
+    populatePublisherFilter() {
+        const publisherContainer = document.getElementById('publisher-options');
+        if (!publisherContainer) return;
+
+        // Get all unique publishers from books
+        const publishers = [...new Set(
+            this.books
+                .filter(book => book.publisher && book.publisher.trim())
+                .map(book => book.publisher.trim())
+        )].sort();
+
+        // Clear existing options
+        publisherContainer.innerHTML = '';
+
+        // Add publisher options
+        publishers.forEach(publisher => {
+            const label = document.createElement('label');
+            label.className = 'filter-option';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.name = 'publisher';
+            checkbox.value = publisher;
+            checkbox.addEventListener('change', () => this.updateFilters());
+
+            const span = document.createElement('span');
+            span.textContent = publisher;
+
+            label.appendChild(checkbox);
+            label.appendChild(span);
+            publisherContainer.appendChild(label);
+        });
+    }
+
     sortBooks() {
         const [field, ...directionParts] = this.currentSort.split('-');
         const direction = directionParts.join('-'); // Handle multi-part directions like 'series-asc'
@@ -951,7 +1016,22 @@ class BookshelfLibrary {
         this.filteredBooks.sort((a, b) => {
             // Special handling for author-series sorting
             if (field === 'author' && direction === 'series-asc') {
-                // 1. First sort by author
+                // Helper function to extract last name from author
+                const getLastName = (author) => {
+                    if (!author) return '';
+                    const parts = author.trim().split(' ');
+                    return parts[parts.length - 1].toLowerCase();
+                };
+
+                // 1. First sort by author's last name
+                const aLastName = getLastName(a.author);
+                const bLastName = getLastName(b.author);
+
+                if (aLastName !== bLastName) {
+                    return aLastName.localeCompare(bLastName);
+                }
+
+                // 2. If same last name, sort by full author name
                 const aAuthor = (a.author || '').toLowerCase();
                 const bAuthor = (b.author || '').toLowerCase();
 
@@ -959,30 +1039,37 @@ class BookshelfLibrary {
                     return aAuthor.localeCompare(bAuthor);
                 }
 
-                // 2. If same author, sort by title (but consider series)
-                const aTitle = (a.title || '').toLowerCase();
-                const bTitle = (b.title || '').toLowerCase();
+                // 3. If same author, handle series vs non-series books
+                const aIsSeries = a.series && a.seriesName;
+                const bIsSeries = b.series && b.seriesName;
 
-                // 3. If both books are part of series, prioritize series order
-                if (a.series && b.series && a.seriesName && b.seriesName) {
+                if (aIsSeries && bIsSeries) {
+                    // Both are series books - sort by series name first
                     const aSeriesName = a.seriesName.toLowerCase();
                     const bSeriesName = b.seriesName.toLowerCase();
 
-                    // If same series, sort by series number
-                    if (aSeriesName === bSeriesName) {
-                        const aSeriesNumber = parseFloat(a.seriesNumber) || 0;
-                        const bSeriesNumber = parseFloat(b.seriesNumber) || 0;
-
-                        if (aSeriesNumber !== bSeriesNumber) {
-                            return aSeriesNumber - bSeriesNumber;
-                        }
-                    } else {
-                        // Different series, sort by series name
+                    if (aSeriesName !== bSeriesName) {
                         return aSeriesName.localeCompare(bSeriesName);
                     }
+
+                    // Same series - sort by series number
+                    const aSeriesNumber = parseFloat(a.seriesNumber) || 0;
+                    const bSeriesNumber = parseFloat(b.seriesNumber) || 0;
+
+                    if (aSeriesNumber !== bSeriesNumber) {
+                        return aSeriesNumber - bSeriesNumber;
+                    }
+                } else if (aIsSeries && !bIsSeries) {
+                    // Series books come before standalone books for same author
+                    return -1;
+                } else if (!aIsSeries && bIsSeries) {
+                    // Standalone books come after series books for same author
+                    return 1;
                 }
 
-                // If not both series books, or same series number, sort by title
+                // 4. Final fallback: sort by book title
+                const aTitle = (a.title || '').toLowerCase();
+                const bTitle = (b.title || '').toLowerCase();
                 return aTitle.localeCompare(bTitle);
             }
 
@@ -1098,35 +1185,97 @@ class BookshelfLibrary {
         return stars;
     }
 
-    updateStats() {
+    async updateStats() {
+        await this.updateStatsWithLocalData();
+    }
+
+
+
+    async updateStatsWithLocalData() {
         const totalBooks = this.books.length;
         const finishedBooks = this.books.filter(book => book.status === 'Finished').length;
         const currentlyReading = this.books.filter(book => book.status === 'Reading').length;
         const toBeRead = this.books.filter(book => book.status === 'TBR').length;
+        const dnfBooks = this.books.filter(book => book.status === 'DNF').length;
 
+        // Calculate pages for different categories
         const totalPages = this.books.reduce((sum, book) => sum + (book.pageCount || 0), 0);
+        const finishedPages = this.books
+            .filter(book => book.status === 'Finished')
+            .reduce((sum, book) => sum + (book.pageCount || 0), 0);
 
-        // Calculate reading time at 60 pages per hour
-        const totalHours = Math.round(totalPages / 60);
+        // Calculate reading time at 60 pages per hour (only for finished books)
+        const totalHours = Math.round(finishedPages / 60);
 
-        // Calculate books read this year
+        // Calculate books read this year (more robust date checking)
         const currentYear = new Date().getFullYear();
-        const booksThisYear = this.books.filter(book =>
-            book.status === 'Finished' &&
-            book.dateFinished &&
-            book.dateFinished.startsWith(currentYear.toString())
-        ).length;
+        const booksThisYear = this.books.filter(book => {
+            if (book.status !== 'Finished' || !book.dateFinished) return false;
 
-        // Update sidebar stats
-        document.getElementById('total-books').textContent = totalBooks;
-        document.getElementById('books-read').textContent = finishedBooks;
-        document.getElementById('currently-reading').textContent = currentlyReading;
-        document.getElementById('to-be-read').textContent = toBeRead;
-        document.getElementById('total-pages').textContent = totalPages.toLocaleString();
-        document.getElementById('reading-time').textContent = `${totalHours} hr`;
-        document.getElementById('books-this-year').textContent = booksThisYear;
+            // Handle different date formats
+            const finishDate = new Date(book.dateFinished);
+            return finishDate.getFullYear() === currentYear;
+        }).length;
 
+        // Calculate average rating for ALL books with ratings (not just finished)
+        // Check both userRating (camelCase) and user_rating (database field)
+        const ratedBooks = this.books.filter(book => {
+            const rating = book.user_rating || book.userRating || book.rating;
+            return rating && rating > 0;
+        });
+
+        const averageRating = ratedBooks.length > 0
+            ? (ratedBooks.reduce((sum, book) => {
+                const rating = book.user_rating || book.userRating || book.rating;
+                return sum + rating;
+            }, 0) / ratedBooks.length).toFixed(1)
+            : 0;
+
+        const stats = {
+            total_books: totalBooks,
+            finished_books: finishedBooks,
+            currently_reading: currentlyReading,
+            to_be_read: toBeRead,
+            dnf_books: dnfBooks,
+            total_pages: totalPages,
+            reading_time: totalHours,
+            books_this_year: booksThisYear,
+            average_rating: averageRating
+        };
+
+        this.updateOverallStatsDisplay(stats);
     }
+
+    updateOverallStatsDisplay(stats) {
+        // Update statistics modal elements - only update elements that exist
+        const elements = {
+            'total-books': stats.total_books || 0,
+            'books-read': stats.finished_books || 0,
+            'currently-reading': stats.currently_reading || 0,
+            'to-be-read': stats.to_be_read || 0,
+            'dnf-books': stats.dnf_books || 0,
+            'total-pages': (stats.total_pages || 0).toLocaleString(),
+            'reading-time': `${stats.reading_time || 0}h`,
+            'average-rating': stats.average_rating > 0 ? `${stats.average_rating}⭐` : 'N/A'
+        };
+
+        // Update each element if it exists
+        Object.keys(elements).forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = elements[id];
+                console.log(`Updated ${id}: ${elements[id]}`);
+            } else {
+                console.warn(`Element not found: ${id}`);
+            }
+        });
+    }
+
+
+
+
+
+
 
     showBookDetail(book) {
         const modal = document.getElementById('book-modal');
@@ -1252,8 +1401,7 @@ class BookshelfLibrary {
 
     showAddBookModal() {
         if (!this.isAuthenticated) {
-            this.pendingAction = 'add-book';
-            this.showAuthModal();
+            this.showNotification('Please go to Settings to authenticate before adding books', 'warning');
             return;
         }
 
@@ -1264,27 +1412,17 @@ class BookshelfLibrary {
         this.handleSeriesChange('No');
     }
 
-    showStatisticsModal() {
+    async showStatisticsModal() {
         document.getElementById('statistics-modal').classList.remove('hidden');
+        // Update statistics when modal opens to ensure fresh data
+        await this.updateStats();
     }
 
     showSettingsModal() {
         document.getElementById('settings-modal').classList.remove('hidden');
     }
 
-    showAuthModal() {
-        // Clear any previous error messages
-        document.getElementById('auth-error').classList.add('hidden');
-        // Clear form fields
-        document.getElementById('auth-username').value = '';
-        document.getElementById('auth-password').value = '';
-        // Show the modal
-        document.getElementById('auth-modal').classList.remove('hidden');
-        // Focus on username field
-        setTimeout(() => {
-            document.getElementById('auth-username').focus();
-        }, 100);
-    }
+
 
     handleAuthentication() {
         const username = document.getElementById('auth-username').value.trim();
@@ -1305,18 +1443,12 @@ class BookshelfLibrary {
         if (isValid) {
             this.isAuthenticated = true;
             this.updateAuthStatus();
-            this.closeModals();
             this.showNotification('✅ Authentication successful!', 'success');
 
-            // Execute the pending action
-            if (this.pendingAction) {
-                if (this.pendingAction === 'add-book') {
-                    this.showAddBookModal();
-                } else if (this.pendingAction.type === 'edit-book') {
-                    this.editBook(this.pendingAction.isbn);
-                }
-                this.pendingAction = null;
-            }
+            // Clear form fields
+            document.getElementById('auth-username').value = '';
+            document.getElementById('auth-password').value = '';
+            errorDiv.classList.add('hidden');
         } else {
             errorDiv.classList.remove('hidden');
             // Clear password field for security
@@ -1328,22 +1460,30 @@ class BookshelfLibrary {
     logout() {
         this.isAuthenticated = false;
         this.updateAuthStatus();
-        this.closeModals();
+
+        // Clear form fields
+        document.getElementById('auth-username').value = '';
+        document.getElementById('auth-password').value = '';
+        document.getElementById('auth-error').classList.add('hidden');
+
         this.showNotification('🔓 Logged out successfully', 'info');
     }
 
     updateAuthStatus() {
         const statusText = document.getElementById('auth-status-text');
         const logoutBtn = document.getElementById('logout-btn');
+        const authFormContainer = document.getElementById('auth-form-container');
 
         if (this.isAuthenticated) {
             statusText.textContent = '🔓 Authenticated';
             statusText.style.color = '#059669';
             logoutBtn.classList.remove('hidden');
+            if (authFormContainer) authFormContainer.classList.add('hidden');
         } else {
             statusText.textContent = '🔒 Not Authenticated';
             statusText.style.color = 'var(--text-secondary)';
             logoutBtn.classList.add('hidden');
+            if (authFormContainer) authFormContainer.classList.remove('hidden');
         }
     }
 
@@ -1543,30 +1683,35 @@ class BookshelfLibrary {
                     lastApiUpdate: this.editingBook.lastApiUpdate
                 };
 
-                // Update reading dates based on status changes
+                // Update reading dates based on status changes (only auto-set if user didn't provide dates)
                 const originalStatus = this.editingBook.status;
+                const userProvidedStartDate = document.getElementById('book-date-started').value;
+                const userProvidedFinishDate = document.getElementById('book-date-finished').value;
+
                 if (bookData.status !== originalStatus) {
                     // Status changed during editing
-                    if (bookData.status === 'Reading' && !bookData.dateStarted) {
+                    if (bookData.status === 'Reading' && !userProvidedStartDate && !bookData.dateStarted) {
                         bookData.dateStarted = new Date().toISOString().split('T')[0];
                     } else if (bookData.status === 'Finished') {
-                        if (!bookData.dateStarted) {
+                        if (!userProvidedStartDate && !bookData.dateStarted) {
                             bookData.dateStarted = new Date().toISOString().split('T')[0];
                         }
-                        if (!bookData.dateFinished) {
+                        if (!userProvidedFinishDate && !bookData.dateFinished) {
                             bookData.dateFinished = new Date().toISOString().split('T')[0];
                         }
                     } else if (bookData.status === 'TBR' && originalStatus !== 'TBR') {
-                        // Only reset dates if moving back to TBR from another status
-                        bookData.dateStarted = null;
-                        bookData.dateFinished = null;
+                        // Only reset dates if moving back to TBR from another status and user didn't provide dates
+                        if (!userProvidedStartDate) bookData.dateStarted = null;
+                        if (!userProvidedFinishDate) bookData.dateFinished = null;
                         bookData.currentPage = 0;
                     } else if (bookData.status === 'DNF') {
-                        // For DNF, keep start date but clear finish date
-                        if (!bookData.dateStarted) {
+                        // For DNF, keep start date but clear finish date (unless user provided dates)
+                        if (!userProvidedStartDate && !bookData.dateStarted) {
                             bookData.dateStarted = new Date().toISOString().split('T')[0];
                         }
-                        bookData.dateFinished = null;
+                        if (!userProvidedFinishDate) {
+                            bookData.dateFinished = null;
+                        }
                     }
                 }
             } else {
@@ -1593,12 +1738,16 @@ class BookshelfLibrary {
                     seriesNumber: isSeries ? seriesNumber : null
                 };
 
-                // Set reading dates based on status for new books
-                if (bookData.status === 'Reading') {
+                // Set reading dates based on status for new books (only if not provided by user)
+                if (bookData.status === 'Reading' && !bookData.dateStarted) {
                     bookData.dateStarted = new Date().toISOString().split('T')[0];
                 } else if (bookData.status === 'Finished') {
-                    bookData.dateStarted = new Date().toISOString().split('T')[0];
-                    bookData.dateFinished = new Date().toISOString().split('T')[0];
+                    if (!bookData.dateStarted) {
+                        bookData.dateStarted = new Date().toISOString().split('T')[0];
+                    }
+                    if (!bookData.dateFinished) {
+                        bookData.dateFinished = new Date().toISOString().split('T')[0];
+                    }
                 }
 
                 // No API fetching - using manual data entry only
@@ -1649,6 +1798,8 @@ class BookshelfLibrary {
             this.editingBook = null;
 
             this.populateSeriesFilter(); // Repopulate series filter after adding/updating book
+            this.populateGenreFilter(); // Repopulate genre filter after adding/updating book
+            this.populatePublisherFilter(); // Repopulate publisher filter after adding/updating book
             this.applyFilters();
             this.updateStats();
             this.closeModals();
@@ -1812,8 +1963,7 @@ class BookshelfLibrary {
 
     editBook(isbn) {
         if (!this.isAuthenticated) {
-            this.pendingAction = { type: 'edit-book', isbn: isbn };
-            this.showAuthModal();
+            this.showNotification('Please go to Settings to authenticate before editing books', 'warning');
             return;
         }
 
@@ -1922,6 +2072,8 @@ class BookshelfLibrary {
                     // Remove from local array
                     this.books = this.books.filter(b => b.isbn !== isbn);
                     this.populateSeriesFilter(); // Repopulate series filter after deleting book
+                    this.populateGenreFilter(); // Repopulate genre filter after deleting book
+                    this.populatePublisherFilter(); // Repopulate publisher filter after deleting book
                     this.applyFilters();
                     this.updateStats();
                     this.closeModals();
