@@ -78,7 +78,9 @@ my-reading-nook/
 ├── index.html                              # Main application file
 ├── styles.css                              # Complete styling with dark mode support
 ├── script.js                               # JavaScript functionality and book management
-├── config.js                               # Supabase configuration (not in git)
+├── config.js                               # Local development config (gitignored)
+├── config.production.js                    # GitHub Pages config (public demo)
+├── config.example.js                       # Configuration template
 ├── book_image.png                          # Book icon for branding
 ├── .gitignore                              # Excludes config.js from version control
 ├── *.sql                                   # Database schema and migration files
@@ -128,13 +130,24 @@ my-reading-nook/
 5. **Manual Entry**: You can still add books manually without using the API
 
 ### Configuration Setup
-1. **Copy Template**: Copy `config.example.js` to `config.js`
-2. **Add Credentials**: Update `config.js` with your Supabase credentials and authentication passwords
-3. **Database Connection**: The app will automatically connect to your Supabase database
-4. **Fallback Mode**: If database connection fails, the app uses local storage
-5. **Security**: `config.js` is automatically excluded from version control via .gitignore
 
-**Important**: Never commit `config.js` to version control. The file contains sensitive credentials and is automatically gitignored for security.
+#### For Local Development (Private Use):
+1. **Copy Template**: Copy `config.example.js` to `config.js`
+2. **Add Secure Credentials**: Update `config.js` with your real Supabase credentials and secure passwords
+3. **Private Storage**: `config.js` is automatically gitignored and never committed to version control
+
+#### For GitHub Pages Deployment (Public Demo):
+1. **Use Production Config**: `config.production.js` is already set up with demo credentials
+2. **Public Visibility**: These credentials will be publicly visible on GitHub Pages
+3. **Demo Purpose**: Use simple demo passwords like `demo`/`demo123`
+
+#### How It Works:
+- **Local Development**: App tries to load `config.js` first (private, secure)
+- **GitHub Pages**: Falls back to `config.production.js` (public, demo)
+- **Database Connection**: App automatically connects to Supabase if configured
+- **Fallback Mode**: Uses local storage if database connection fails
+
+**Security Note**: `config.js` contains your private credentials and is gitignored. `config.production.js` is public and should only contain demo credentials.
 
 ## 📊 Book Data Format
 

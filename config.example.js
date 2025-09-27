@@ -1,11 +1,14 @@
-// Configuration template file
+// Configuration template file for local development
 //
 // SETUP INSTRUCTIONS:
 // 1. Copy this file to config.js
-// 2. Update with your actual credentials
+// 2. Update with your actual secure credentials
 // 3. config.js is automatically gitignored for security
 //
-// NOTE: The app will use local storage if Supabase config is not provided
+// NOTE:
+// - config.js (this file) = Local development (private, secure credentials)
+// - config.production.js = GitHub Pages deployment (public, demo credentials)
+// - The app will use local storage if Supabase config is not provided
 
 const CONFIG = {
     // Supabase configuration (optional - leave as placeholders to use local storage only)
