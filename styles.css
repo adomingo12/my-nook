@@ -126,7 +126,7 @@ label, span, p, h1, h2, h3, h4, h5, h6 {
     display: flex;
     flex: 1;
     gap: 0;
-    height: calc(100vh - 100px);
+    min-height: calc(100vh - 100px);
     position: relative;
 }
 
@@ -216,7 +216,27 @@ label, span, p, h1, h2, h3, h4, h5, h6 {
     padding-right: 8px;
 }
 
-/* Custom scrollbar for genre options */
+/* Global Custom Scrollbar Styles */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--text-secondary);
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-color);
+}
+
+/* Custom scrollbar for genre options (inherits from global) */
 #genre-options::-webkit-scrollbar {
     width: 6px;
 }
@@ -242,7 +262,7 @@ label, span, p, h1, h2, h3, h4, h5, h6 {
     padding-right: 8px;
 }
 
-/* Custom scrollbar for scrollable filters */
+/* Custom scrollbar for scrollable filters (inherits from global but smaller) */
 .scrollable-filter::-webkit-scrollbar {
     width: 6px;
 }
@@ -285,11 +305,10 @@ label, span, p, h1, h2, h3, h4, h5, h6 {
 .main-content {
     flex: 1;
     padding: 0;
-    overflow-y: auto;
     display: flex;
     flex-direction: column;
-    height: 100%;
     margin-left: 280px;
+    min-height: 100vh;
 }
 
 .container {
@@ -1777,6 +1796,7 @@ label, span, p, h1, h2, h3, h4, h5, h6 {
 .notification-warning {
     background: #f59e0b;
     color: white;
+    border: 1px solid #d97706;
 }
 
 .notification-info {

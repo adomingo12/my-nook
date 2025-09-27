@@ -128,10 +128,13 @@ my-reading-nook/
 5. **Manual Entry**: You can still add books manually without using the API
 
 ### Configuration Setup
-1. **Create config.js**: Copy your Supabase credentials to the config file
-2. **Database Connection**: The app will automatically connect to your Supabase database
-3. **Fallback Mode**: If database connection fails, the app uses local storage
-4. **Security**: config.js is excluded from version control via .gitignore
+1. **Copy Template**: Copy `config.example.js` to `config.js`
+2. **Add Credentials**: Update `config.js` with your Supabase credentials and authentication passwords
+3. **Database Connection**: The app will automatically connect to your Supabase database
+4. **Fallback Mode**: If database connection fails, the app uses local storage
+5. **Security**: `config.js` is automatically excluded from version control via .gitignore
+
+**Important**: Never commit `config.js` to version control. The file contains sensitive credentials and is automatically gitignored for security.
 
 ## 📊 Book Data Format
 

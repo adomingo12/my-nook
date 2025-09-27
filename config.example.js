@@ -1,18 +1,23 @@
-// Example configuration file for environment variables
-// Copy this file to config.js and update with your actual values
-// This file should be added to .gitignore to keep credentials secure
+// Configuration template file
+//
+// SETUP INSTRUCTIONS:
+// 1. Copy this file to config.js
+// 2. Update with your actual credentials
+// 3. config.js is automatically gitignored for security
+//
+// NOTE: The app will use local storage if Supabase config is not provided
 
 const CONFIG = {
-    // Supabase configuration
-    SUPABASE_URL: 'https://your-project-id.supabase.co',
-    SUPABASE_KEY: 'your_supabase_service_role_key_here',
-    
+    // Supabase configuration (optional - leave as placeholders to use local storage only)
+    SUPABASE_URL: 'YOUR_SUPABASE_URL_HERE',
+    SUPABASE_KEY: 'YOUR_SUPABASE_ANON_KEY_HERE',
+
     // Authentication credentials for add/edit book functionality
-    // Customize these username/password combinations as needed
+    // For GitHub Pages: Use demo credentials (they will be publicly visible!)
+    // For private deployment: Use secure passwords
     AUTH_CREDENTIALS: [
-        { username: 'admin', password: 'your_admin_password' },
-        { username: 'your_name', password: 'your_password' },
-        { username: 'user', password: 'another_password' }
+        { username: 'demo', password: 'demo123' },
+        { username: 'guest', password: 'guest' }
     ]
 };
 

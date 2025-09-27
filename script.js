@@ -1429,12 +1429,17 @@ class BookshelfLibrary {
         const password = document.getElementById('auth-password').value;
         const errorDiv = document.getElementById('auth-error');
 
-        // Get credentials from config file
-        const validCredentials = window.CONFIG?.AUTH_CREDENTIALS || [
-            // Fallback credentials if config is not available
-            { username: 'admin', password: 'bookworm123' },
-            { username: 'user', password: 'password' }
-        ];
+        // Check if config file is loaded
+        if (!window.CONFIG || !window.CONFIG.AUTH_CREDENTIALS) {
+            errorDiv.textContent = 'Configuration file missing. Please copy config.example.js to config.js and update with your credentials.';
+            errorDiv.classList.remove('hidden');
+            document.getElementById('auth-password').value = '';
+            this.showNotification('⚠️ Config file missing. Check config.example.js for setup instructions.', 'warning');
+            return;
+        }
+
+        // Get credentials from config file only
+        const validCredentials = window.CONFIG.AUTH_CREDENTIALS;
 
         const isValid = validCredentials.some(cred =>
             cred.username === username && cred.password === password
@@ -1450,6 +1455,7 @@ class BookshelfLibrary {
             document.getElementById('auth-password').value = '';
             errorDiv.classList.add('hidden');
         } else {
+            errorDiv.textContent = 'Invalid username or password.';
             errorDiv.classList.remove('hidden');
             // Clear password field for security
             document.getElementById('auth-password').value = '';
