@@ -8,11 +8,13 @@ class BookshelfLibrary {
             status: [],
             format: [],
             genre: [],
+            author: [],
             pageCount: [],
             publisher: [],
             rating: [],
             readingTime: [],
             datePublished: [],
+            yearRead: [],
             series: []
         };
         this.currentSort = 'author-series-asc';
@@ -70,6 +72,8 @@ class BookshelfLibrary {
         this.populateSeriesFilter(); // Populate series filter after books are loaded
         this.populateGenreFilter(); // Populate genre filter after books are loaded
         this.populatePublisherFilter(); // Populate publisher filter after books are loaded
+        this.populateAuthorFilter(); // Populate author filter after books are loaded
+        this.updateFilterCounts(); // Update all filter counts
         this.applyFilters(); // Use applyFilters instead of renderBooks directly
         this.updateStats();
         this.updateAuthStatus(); // Initialize authentication status display
@@ -201,6 +205,13 @@ class BookshelfLibrary {
             this.toggleDarkMode(e.target.checked);
         });
 
+        // Filter size controls
+        document.querySelectorAll('input[name="filter-size"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                this.setFilterSize(e.target.value);
+            });
+        });
+
         // Logout button
         document.getElementById('logout-btn').addEventListener('click', () => {
             this.logout();
@@ -208,6 +219,9 @@ class BookshelfLibrary {
 
         // Initialize dark mode from localStorage
         this.initializeDarkMode();
+
+        // Initialize filter size from localStorage
+        this.initializeFilterSize();
 
         // Status change handler for date fields
         document.getElementById('book-status').addEventListener('change', (e) => {
@@ -520,7 +534,7 @@ class BookshelfLibrary {
 
     initializeFilters() {
         // Initialize all filter categories as collapsed
-        const categories = ['status', 'format', 'genre', 'pageCount', 'publisher', 'rating', 'readingTime', 'datePublished'];
+        const categories = ['status', 'format', 'genre', 'author', 'pageCount', 'publisher', 'rating', 'readingTime', 'datePublished', 'yearRead', 'series'];
         categories.forEach(category => {
             const options = document.getElementById(`${category}-options`);
             const toggle = document.querySelector(`[data-category="${category}"]`);
@@ -544,7 +558,7 @@ class BookshelfLibrary {
 
     updateFilters() {
         // Collect all checked filters
-        const filterTypes = ['status', 'format', 'genre', 'pageCount', 'publisher', 'rating', 'readingTime', 'datePublished', 'series'];
+        const filterTypes = ['status', 'format', 'genre', 'author', 'pageCount', 'publisher', 'rating', 'readingTime', 'datePublished', 'yearRead', 'series'];
 
         filterTypes.forEach(type => {
             const checkboxes = document.querySelectorAll(`input[name="${type}"]:checked`);
@@ -643,11 +657,13 @@ class BookshelfLibrary {
             status: [],
             format: [],
             genre: [],
+            author: [],
             pageCount: [],
             publisher: [],
             rating: [],
             readingTime: [],
             datePublished: [],
+            yearRead: [],
             series: []
         };
 
@@ -816,6 +832,11 @@ class BookshelfLibrary {
                 return false;
             }
 
+            // Author filter
+            if (this.currentFilters.author.length > 0 && !this.currentFilters.author.includes(book.author)) {
+                return false;
+            }
+
             // Page count filter
             if (this.currentFilters.pageCount.length > 0) {
                 const pageCount = book.pageCount || 0;
@@ -842,13 +863,21 @@ class BookshelfLibrary {
                 }
             }
 
-            // Rating filter
+            // Rating filter - exact star matches
             if (this.currentFilters.rating.length > 0) {
                 const userRating = book.userRating || 0;
-                const matchesRating = this.currentFilters.rating.some(minRating => {
-                    return userRating >= parseInt(minRating);
-                });
-                if (!matchesRating) return false;
+                if (!this.currentFilters.rating.includes(userRating.toString())) {
+                    return false;
+                }
+            }
+
+            // Year Read filter
+            if (this.currentFilters.yearRead.length > 0) {
+                if (!book.dateFinished) return false;
+                const finishYear = new Date(book.dateFinished).getFullYear().toString();
+                if (!this.currentFilters.yearRead.includes(finishYear)) {
+                    return false;
+                }
             }
 
             // Reading time filter (estimated from page count at 60 pages/hour)
@@ -895,7 +924,12 @@ class BookshelfLibrary {
             // Series filter
             if (this.currentFilters.series.length > 0) {
                 const bookSeriesName = book.seriesName || '';
-                if (!this.currentFilters.series.includes(bookSeriesName)) {
+                const isStandalone = !book.series || !book.seriesName;
+
+                // Check if "Stand Alones" is selected and this is a standalone book
+                if (this.currentFilters.series.includes('Stand Alones') && isStandalone) {
+                    // This book matches the standalone filter
+                } else if (!this.currentFilters.series.includes(bookSeriesName)) {
                     return false;
                 }
             }
@@ -905,6 +939,215 @@ class BookshelfLibrary {
 
         this.sortBooks();
         this.renderBooks();
+        this.updateFilterCounts();
+    }
+
+    updateFilterCounts() {
+        // Update status filter counts
+        const statusCounts = {
+            'TBR': this.books.filter(book => book.status === 'TBR').length,
+            'Reading': this.books.filter(book => book.status === 'Reading').length,
+            'Finished': this.books.filter(book => book.status === 'Finished').length,
+            'DNF': this.books.filter(book => book.status === 'DNF').length
+        };
+
+        Object.keys(statusCounts).forEach(status => {
+            const element = document.querySelector(`input[name="status"][value="${status}"]`);
+            if (element) {
+                const countSpan = element.parentElement.querySelector('.filter-count');
+                if (countSpan) {
+                    countSpan.textContent = `(${statusCounts[status]})`;
+                }
+            }
+        });
+
+        // Update format filter counts
+        const formatCounts = {
+            'Physical': this.books.filter(book => {
+                const formats = Array.isArray(book.format) ? book.format : [book.format];
+                return formats.includes('Physical');
+            }).length,
+            'Kindle': this.books.filter(book => {
+                const formats = Array.isArray(book.format) ? book.format : [book.format];
+                return formats.includes('Kindle');
+            }).length,
+            'Audiobook': this.books.filter(book => {
+                const formats = Array.isArray(book.format) ? book.format : [book.format];
+                return formats.includes('Audiobook');
+            }).length
+        };
+
+        Object.keys(formatCounts).forEach(format => {
+            const element = document.querySelector(`input[name="format"][value="${format}"]`);
+            if (element) {
+                const countSpan = element.parentElement.querySelector('.filter-count');
+                if (countSpan) {
+                    countSpan.textContent = `(${formatCounts[format]})`;
+                }
+            }
+        });
+
+        // Update rating filter counts
+        for (let rating = 1; rating <= 5; rating++) {
+            const count = this.books.filter(book => book.userRating === rating).length;
+            const element = document.querySelector(`input[name="rating"][value="${rating}"]`);
+            if (element) {
+                const countSpan = element.parentElement.querySelector('.filter-count');
+                if (countSpan) {
+                    countSpan.textContent = `(${count})`;
+                }
+            }
+        }
+
+        // Update year read filter counts
+        const currentYear = new Date().getFullYear();
+        const maxYear = Math.max(currentYear, 2025); // Include 2025 even if current year is less
+        for (let year = 2020; year <= maxYear; year++) {
+            const count = this.books.filter(book => {
+                if (!book.dateFinished) return false;
+                const finishYear = new Date(book.dateFinished).getFullYear();
+                return finishYear === year;
+            }).length;
+
+            const element = document.querySelector(`input[name="yearRead"][value="${year}"]`);
+            if (element) {
+                const countSpan = element.parentElement.querySelector('.filter-count');
+                if (countSpan) {
+                    countSpan.textContent = `(${count})`;
+                }
+            }
+        }
+
+        // Update genre filter counts
+        document.querySelectorAll('input[name="genre"]').forEach(checkbox => {
+            const genre = checkbox.value;
+            const count = this.books.filter(book => book.genre === genre).length;
+            const countSpan = checkbox.parentElement.querySelector('.filter-count');
+            if (countSpan) {
+                countSpan.textContent = `(${count})`;
+            }
+        });
+
+        // Update author filter counts
+        document.querySelectorAll('input[name="author"]').forEach(checkbox => {
+            const author = checkbox.value;
+            const count = this.books.filter(book => book.author === author).length;
+            const countSpan = checkbox.parentElement.querySelector('.filter-count');
+            if (countSpan) {
+                countSpan.textContent = `(${count})`;
+            }
+        });
+
+        // Update series filter counts
+        document.querySelectorAll('input[name="series"]').forEach(checkbox => {
+            const series = checkbox.value;
+            let count;
+
+            if (series === 'Stand Alones') {
+                count = this.books.filter(book => !book.series || !book.seriesName).length;
+            } else {
+                count = this.books.filter(book => book.seriesName === series).length;
+            }
+
+            const countSpan = checkbox.parentElement.querySelector('.filter-count');
+            if (countSpan) {
+                countSpan.textContent = `(${count})`;
+            }
+        });
+
+        // Update page count filter counts
+        const pageCountRanges = {
+            '0-100': (pages) => pages >= 0 && pages <= 100,
+            '101-200': (pages) => pages >= 101 && pages <= 200,
+            '201-300': (pages) => pages >= 201 && pages <= 300,
+            '301-400': (pages) => pages >= 301 && pages <= 400,
+            '401-500': (pages) => pages >= 401 && pages <= 500,
+            '501-600': (pages) => pages >= 501 && pages <= 600,
+            '601-700': (pages) => pages >= 601 && pages <= 700,
+            '701-800': (pages) => pages >= 701 && pages <= 800,
+            '801+': (pages) => pages >= 801,
+            '800+': (pages) => pages >= 800
+        };
+
+        Object.keys(pageCountRanges).forEach(range => {
+            const count = this.books.filter(book => {
+                const pages = parseInt(book.pageCount) || 0;
+                return pageCountRanges[range](pages);
+            }).length;
+
+            const element = document.querySelector(`input[name="pageCount"][value="${range}"]`);
+            if (element) {
+                const countSpan = element.parentElement.querySelector('.filter-count');
+                if (countSpan) {
+                    countSpan.textContent = `(${count})`;
+                }
+            }
+        });
+
+        // Update reading time filter counts
+        const readingTimeRanges = {
+            '0-3': (time) => time >= 0 && time <= 3,
+            '3-6': (time) => time > 3 && time <= 6,
+            '6-9': (time) => time > 6 && time <= 9,
+            '9-12': (time) => time > 9 && time <= 12,
+            '12-15': (time) => time > 12 && time <= 15,
+            '15+': (time) => time > 15
+        };
+
+        Object.keys(readingTimeRanges).forEach(range => {
+            const count = this.books.filter(book => {
+                const time = parseFloat(book.readingTime) || 0;
+                return readingTimeRanges[range](time);
+            }).length;
+
+            const element = document.querySelector(`input[name="readingTime"][value="${range}"]`);
+            if (element) {
+                const countSpan = element.parentElement.querySelector('.filter-count');
+                if (countSpan) {
+                    countSpan.textContent = `(${count})`;
+                }
+            }
+        });
+
+        // Update date published filter counts
+        const datePublishedRanges = {
+            '2020-2029': (year) => year >= 2020 && year <= 2029,
+            '2010-2019': (year) => year >= 2010 && year <= 2019,
+            '2000-2009': (year) => year >= 2000 && year <= 2009,
+            '1990-1999': (year) => year >= 1990 && year <= 1999,
+            '1980-1989': (year) => year >= 1980 && year <= 1989,
+            '1970-1979': (year) => year >= 1970 && year <= 1979,
+            '1960-1969': (year) => year >= 1960 && year <= 1969,
+            '1950-1959': (year) => year >= 1950 && year <= 1959,
+            '1940-1949': (year) => year >= 1940 && year <= 1949,
+            '1930-1939': (year) => year >= 1930 && year <= 1939
+        };
+
+        Object.keys(datePublishedRanges).forEach(range => {
+            const count = this.books.filter(book => {
+                if (!book.datePublished) return false;
+                const year = new Date(book.datePublished).getFullYear();
+                return datePublishedRanges[range](year);
+            }).length;
+
+            const element = document.querySelector(`input[name="datePublished"][value="${range}"]`);
+            if (element) {
+                const countSpan = element.parentElement.querySelector('.filter-count');
+                if (countSpan) {
+                    countSpan.textContent = `(${count})`;
+                }
+            }
+        });
+
+        // Update publisher filter counts
+        document.querySelectorAll('input[name="publisher"]').forEach(checkbox => {
+            const publisher = checkbox.value;
+            const count = this.books.filter(book => book.publisher === publisher).length;
+            const countSpan = checkbox.parentElement.querySelector('.filter-count');
+            if (countSpan) {
+                countSpan.textContent = `(${count})`;
+            }
+        });
     }
 
     populateSeriesFilter() {
@@ -918,8 +1161,30 @@ class BookshelfLibrary {
                 .map(book => book.seriesName)
         )].sort();
 
+        // Check if there are any standalone books
+        const hasStandalones = this.books.some(book => !book.series || !book.seriesName);
+
         // Clear existing options
         seriesContainer.innerHTML = '';
+
+        // Add Stand Alones option if there are standalone books
+        if (hasStandalones) {
+            const label = document.createElement('label');
+            label.className = 'filter-option';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.name = 'series';
+            checkbox.value = 'Stand Alones';
+            checkbox.addEventListener('change', () => this.updateFilters());
+
+            const span = document.createElement('span');
+            span.innerHTML = 'Stand Alones <span class="filter-count">(0)</span>';
+
+            label.appendChild(checkbox);
+            label.appendChild(span);
+            seriesContainer.appendChild(label);
+        }
 
         // Add series options
         seriesNames.forEach(seriesName => {
@@ -933,11 +1198,50 @@ class BookshelfLibrary {
             checkbox.addEventListener('change', () => this.updateFilters());
 
             const span = document.createElement('span');
-            span.textContent = seriesName;
+            span.innerHTML = `${seriesName} <span class="filter-count">(0)</span>`;
 
             label.appendChild(checkbox);
             label.appendChild(span);
             seriesContainer.appendChild(label);
+        });
+    }
+
+    populateAuthorFilter() {
+        const authorContainer = document.getElementById('author-options');
+        if (!authorContainer) return;
+
+        // Get all unique authors from books and sort by last name
+        const authors = [...new Set(
+            this.books
+                .filter(book => book.author)
+                .map(book => book.author)
+        )].sort((a, b) => {
+            // Extract last names for sorting
+            const lastNameA = a.split(' ').pop().toLowerCase();
+            const lastNameB = b.split(' ').pop().toLowerCase();
+            return lastNameA.localeCompare(lastNameB);
+        });
+
+        // Clear existing options
+        authorContainer.innerHTML = '';
+
+        // Add author options
+        authors.forEach(author => {
+            const label = document.createElement('label');
+            label.className = 'filter-option';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.name = 'author';
+            checkbox.value = author;
+            checkbox.addEventListener('change', () => this.updateFilters());
+
+            const span = document.createElement('span');
+            span.innerHTML = `${author} <span class="filter-count">(0)</span>`;
+
+            label.appendChild(checkbox);
+            label.appendChild(span);
+            authorContainer.appendChild(label);
         });
     }
 
@@ -967,7 +1271,7 @@ class BookshelfLibrary {
             checkbox.addEventListener('change', () => this.updateFilters());
 
             const span = document.createElement('span');
-            span.textContent = genre;
+            span.innerHTML = `${genre} <span class="filter-count">(0)</span>`;
 
             label.appendChild(checkbox);
             label.appendChild(span);
@@ -1001,7 +1305,7 @@ class BookshelfLibrary {
             checkbox.addEventListener('change', () => this.updateFilters());
 
             const span = document.createElement('span');
-            span.textContent = publisher;
+            span.innerHTML = `${publisher} <span class="filter-count">(0)</span>`;
 
             label.appendChild(checkbox);
             label.appendChild(span);
@@ -1514,6 +1818,30 @@ class BookshelfLibrary {
             document.documentElement.removeAttribute('data-theme');
             localStorage.setItem('darkMode', 'false');
         }
+    }
+
+    initializeFilterSize() {
+        const filterSize = localStorage.getItem('filterSize') || 'medium';
+        const radio = document.querySelector(`input[name="filter-size"][value="${filterSize}"]`);
+
+        if (radio) {
+            radio.checked = true;
+        }
+
+        this.setFilterSize(filterSize);
+    }
+
+    setFilterSize(size) {
+        const sidebar = document.querySelector('.filters-sidebar');
+
+        // Remove existing size classes
+        sidebar.classList.remove('filter-size-small', 'filter-size-medium', 'filter-size-large');
+
+        // Add new size class
+        sidebar.classList.add(`filter-size-${size}`);
+
+        // Save to localStorage
+        localStorage.setItem('filterSize', size);
     }
 
     closeModals(clearEditingState = true) {

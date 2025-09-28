@@ -48,19 +48,19 @@
                     <div class="filter-options" id="status-options">
                         <label class="filter-option">
                             <input type="checkbox" name="status" value="TBR">
-                            <span>To Be Read</span>
+                            <span>To Be Read <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="status" value="Reading">
-                            <span>Currently Reading</span>
+                            <span>Currently Reading <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="status" value="Finished">
-                            <span>Finished</span>
+                            <span>Finished <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="status" value="DNF">
-                            <span>Did Not Finish</span>
+                            <span>Did Not Finish <span class="filter-count">(0)</span></span>
                         </label>
                     </div>
                 </div>
@@ -74,15 +74,15 @@
                     <div class="filter-options" id="format-options">
                         <label class="filter-option">
                             <input type="checkbox" name="format" value="Physical">
-                            <span>Physical</span>
+                            <span>Physical <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="format" value="Kindle">
-                            <span>Kindle</span>
+                            <span>Kindle <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="format" value="Audiobook">
-                            <span>Audiobook</span>
+                            <span>Audiobook <span class="filter-count">(0)</span></span>
                         </label>
                     </div>
                 </div>
@@ -98,6 +98,17 @@
                     </div>
                 </div>
 
+                <!-- Author Filter -->
+                <div class="filter-category">
+                    <button class="filter-category-toggle" data-category="author">
+                        <span class="filter-category-title">Author</span>
+                        <span class="filter-toggle-icon">▼</span>
+                    </button>
+                    <div class="filter-options scrollable-filter" id="author-options">
+                        <!-- Author options will be populated dynamically -->
+                    </div>
+                </div>
+
                 <!-- Page Count Filter -->
                 <div class="filter-category">
                     <button class="filter-category-toggle" data-category="pageCount">
@@ -107,43 +118,43 @@
                     <div class="filter-options" id="pageCount-options">
                         <label class="filter-option">
                             <input type="checkbox" name="pageCount" value="0-100">
-                            <span>0-100 pages</span>
+                            <span>0-100 pages <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="pageCount" value="101-200">
-                            <span>101-200 pages</span>
+                            <span>101-200 pages <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="pageCount" value="201-300">
-                            <span>201-300 pages</span>
+                            <span>201-300 pages <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="pageCount" value="301-400">
-                            <span>301-400 pages</span>
+                            <span>301-400 pages <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="pageCount" value="401-500">
-                            <span>401-500 pages</span>
+                            <span>401-500 pages <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="pageCount" value="501-600">
-                            <span>501-600 pages</span>
+                            <span>501-600 pages <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="pageCount" value="601-700">
-                            <span>601-700 pages</span>
+                            <span>601-700 pages <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="pageCount" value="701-800">
-                            <span>701-800 pages</span>
+                            <span>701-800 pages <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="pageCount" value="801+">
-                            <span>801+ pages</span>
+                            <span>801+ pages <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="pageCount" value="800+">
-                            <span>800+ pages</span>
+                            <span>800+ pages <span class="filter-count">(0)</span></span>
                         </label>
                     </div>
                 </div>
@@ -170,23 +181,57 @@
                     <div class="filter-options" id="rating-options">
                         <label class="filter-option">
                             <input type="checkbox" name="rating" value="1">
-                            <span>1+ Stars</span>
+                            <span>1 Star <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="rating" value="2">
-                            <span>2+ Stars</span>
+                            <span>2 Stars <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="rating" value="3">
-                            <span>3+ Stars</span>
+                            <span>3 Stars <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="rating" value="4">
-                            <span>4+ Stars</span>
+                            <span>4 Stars <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="rating" value="5">
-                            <span>5 Stars</span>
+                            <span>5 Stars <span class="filter-count">(0)</span></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Year Read Filter -->
+                <div class="filter-category">
+                    <button class="filter-category-toggle" data-category="yearRead">
+                        <span class="filter-category-title">Year Read</span>
+                        <span class="filter-toggle-icon">▼</span>
+                    </button>
+                    <div class="filter-options" id="yearRead-options">
+                        <label class="filter-option">
+                            <input type="checkbox" name="yearRead" value="2025">
+                            <span>2025 <span class="filter-count">(0)</span></span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="yearRead" value="2024">
+                            <span>2024 <span class="filter-count">(0)</span></span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="yearRead" value="2023">
+                            <span>2023 <span class="filter-count">(0)</span></span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="yearRead" value="2022">
+                            <span>2022 <span class="filter-count">(0)</span></span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="yearRead" value="2021">
+                            <span>2021 <span class="filter-count">(0)</span></span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" name="yearRead" value="2020">
+                            <span>2020 <span class="filter-count">(0)</span></span>
                         </label>
                     </div>
                 </div>
@@ -200,27 +245,27 @@
                     <div class="filter-options" id="readingTime-options">
                         <label class="filter-option">
                             <input type="checkbox" name="readingTime" value="0-3">
-                            <span>0-3 hours</span>
+                            <span>0-3 hours <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="readingTime" value="3-6">
-                            <span>3-6 hours</span>
+                            <span>3-6 hours <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="readingTime" value="6-9">
-                            <span>6-9 hours</span>
+                            <span>6-9 hours <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="readingTime" value="9-12">
-                            <span>9-12 hours</span>
+                            <span>9-12 hours <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="readingTime" value="12-15">
-                            <span>12-15 hours</span>
+                            <span>12-15 hours <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="readingTime" value="15+">
-                            <span>15+ hours</span>
+                            <span>15+ hours <span class="filter-count">(0)</span></span>
                         </label>
                     </div>
                 </div>
@@ -234,43 +279,43 @@
                     <div class="filter-options scrollable-filter" id="datePublished-options">
                         <label class="filter-option">
                             <input type="checkbox" name="datePublished" value="2020-2029">
-                            <span>2020-2029</span>
+                            <span>2020-2029 <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="datePublished" value="2010-2019">
-                            <span>2010-2019</span>
+                            <span>2010-2019 <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="datePublished" value="2000-2009">
-                            <span>2000-2009</span>
+                            <span>2000-2009 <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="datePublished" value="1990-1999">
-                            <span>1990-1999</span>
+                            <span>1990-1999 <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="datePublished" value="1980-1989">
-                            <span>1980-1989</span>
+                            <span>1980-1989 <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="datePublished" value="1970-1979">
-                            <span>1970-1979</span>
+                            <span>1970-1979 <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="datePublished" value="1960-1969">
-                            <span>1960-1969</span>
+                            <span>1960-1969 <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="datePublished" value="1950-1959">
-                            <span>1950-1959</span>
+                            <span>1950-1959 <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="datePublished" value="1940-1949">
-                            <span>1940-1949</span>
+                            <span>1940-1949 <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="datePublished" value="1930-1939">
-                            <span>1930-1939</span>
+                            <span>1930-1939 <span class="filter-count">(0)</span></span>
                         </label>
                         <label class="filter-option">
                             <input type="checkbox" name="datePublished" value="1920-1929">
@@ -407,6 +452,20 @@
                             <div class="toggle-switch">
                                 <input type="checkbox" id="dark-mode-toggle" class="toggle-input">
                                 <span class="toggle-slider"></span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <label class="setting-label">
+                            <span>Filter Bar Size</span>
+                            <div class="size-selector">
+                                <input type="radio" id="filter-size-small" name="filter-size" value="small">
+                                <label for="filter-size-small" class="size-option">Small</label>
+                                <input type="radio" id="filter-size-medium" name="filter-size" value="medium" checked>
+                                <label for="filter-size-medium" class="size-option">Medium</label>
+                                <input type="radio" id="filter-size-large" name="filter-size" value="large">
+                                <label for="filter-size-large" class="size-option">Large</label>
                             </div>
                         </label>
                     </div>

@@ -172,7 +172,7 @@ label, span, p, h1, h2, h3, h4, h5, h6 {
 
 /* Filters Sidebar */
 .filters-sidebar {
-    width: 280px;
+    width: 340px;
     background: var(--bg-tertiary);
     border-right: 3px solid var(--border-secondary);
     padding: 1.5rem;
@@ -183,7 +183,20 @@ label, span, p, h1, h2, h3, h4, h5, h6 {
     top: 100px;
     left: 0;
     z-index: 10;
-    transition: background-color 0.3s ease, border-color 0.3s ease;
+    transition: background-color 0.3s ease, border-color 0.3s ease, width 0.3s ease;
+}
+
+/* Filter Bar Size Variants */
+.filters-sidebar.filter-size-small {
+    width: 280px;
+}
+
+.filters-sidebar.filter-size-medium {
+    width: 340px;
+}
+
+.filters-sidebar.filter-size-large {
+    width: 400px;
 }
 
 .filters-header {
@@ -339,6 +352,13 @@ label, span, p, h1, h2, h3, h4, h5, h6 {
 .filter-option input[type="checkbox"] {
     margin: 0;
     cursor: pointer;
+}
+
+.filter-count {
+    color: var(--text-secondary) !important;
+    font-size: 0.875rem;
+    font-weight: 400;
+    margin-left: auto;
 }
 
 /* Main Content */
@@ -2185,6 +2205,45 @@ label, span, p, h1, h2, h3, h4, h5, h6 {
 
 .toggle-input:checked + .toggle-slider:before {
     transform: translateX(30px);
+}
+
+/* Size Selector */
+.size-selector {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.size-selector input[type="radio"] {
+    display: none;
+}
+
+.size-option {
+    padding: 0.4rem 0.8rem;
+    border: 2px solid var(--border-primary);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+    transition: all 0.2s ease;
+    user-select: none;
+    min-width: 60px;
+    text-align: center;
+}
+
+.size-option:hover {
+    border-color: #d946ef;
+    color: var(--text-primary);
+    background: var(--bg-primary);
+}
+
+.size-selector input[type="radio"]:checked + .size-option {
+    background: #d946ef;
+    border-color: #d946ef;
+    color: white;
+    font-weight: 600;
 }
 
 /* Additional Cross-Browser Consistency Fixes */
