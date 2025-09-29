@@ -132,8 +132,6 @@
                     </div>
                 </div>
 
-
-
                 <!-- Rating Filter -->
                 <div class="filter-category">
                     <button class="filter-category-toggle" data-category="rating">
@@ -236,8 +234,6 @@
                             </div>
                         </div>
 
-
-
                 <div class="action-section" style="display: none;">
                     <!-- Hidden export/import functionality - buttons moved to search section -->
                     <button id="export-btn" class="export-btn">Export Library</button>
@@ -245,9 +241,6 @@
                     <input type="file" id="import-file" accept=".json" style="display: none;">
                 </div>
             </section>
-
-
-
 
             <!-- Book Count Display -->
             <div class="book-count-container">
@@ -261,6 +254,15 @@
                 </div>
             </section>
 
+            <!-- Pagination Controls -->
+            <div class="pagination-container" id="pagination-container" style="display: none;">
+                <div class="pagination-controls">
+                    <button id="prev-page" class="pagination-btn" disabled>←</button>
+                    <div class="page-numbers" id="page-numbers"></div>
+                    <button id="next-page" class="pagination-btn" disabled>→</button>
+                </div>
+            </div>
+
                     <!-- Empty State -->
                     <div id="empty-state" class="empty-state hidden">
                         <h3>📚 No Books Found</h3>
@@ -271,8 +273,6 @@
                 </main>
             </div>
         </div>
-
-
     </main>
 
     <!-- Book Detail Modal -->
@@ -285,10 +285,6 @@
             </div>
         </div>
     </div>
-
-
-
-
 
     <!-- Settings Modal -->
     <div id="settings-modal" class="modal hidden">
@@ -322,7 +318,26 @@
                         </label>
                     </div>
 
+                    <div class="setting-item">
+                        <label class="setting-label">
+                            <span>Book Display</span>
+                            <div class="size-selector">
+                                <input type="radio" id="book-display-default" name="book-display" value="default" checked>
+                                <label for="book-display-default" class="size-option">Grid View</label>
+                                <input type="radio" id="book-display-list" name="book-display" value="list">
+                                <label for="book-display-list" class="size-option">List View</label>
+                            </div>
+                        </label>
+                    </div>
 
+                    <div class="setting-item">
+                        <label class="setting-label">
+                            <span id="pagination-setting-title">Books Per Page (Grid)</span>
+                            <div class="size-selector" id="pagination-options">
+                                <!-- Options will be populated by JavaScript -->
+                            </div>
+                        </label>
+                    </div>
                 </div>
             </div>
         </div>
@@ -405,8 +420,6 @@
             </div>
         </div>
     </div>
-
-
 
     <!-- Add Book Modal -->
     <div id="add-book-modal" class="modal hidden">
@@ -619,8 +632,6 @@
             </div>
         </div>
     </div>
-
-
                 </div>
             </main>
         </div>

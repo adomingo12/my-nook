@@ -23,6 +23,13 @@ class BookshelfLibrary {
         this.pendingAction = null; // Store the action to perform after authentication
         this.editingBook = null;
 
+        // Pagination properties
+        this.currentPage = 1;
+        this.booksPerPage = {
+            grid: parseInt(localStorage.getItem('booksPerPage_grid')) || 40,
+            list: parseInt(localStorage.getItem('booksPerPage_list')) || 20
+        };
+
         // Initialize Supabase client
         this.supabase = null;
         this.initializeSupabase();
@@ -234,6 +241,26 @@ class BookshelfLibrary {
             });
         });
 
+        // Book display controls
+        document.querySelectorAll('input[name="book-display"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                this.setBookDisplay(e.target.value);
+                this.updatePaginationOptions();
+            });
+        });
+
+        // Initialize pagination options
+        this.updatePaginationOptions();
+
+        // Pagination controls
+        document.getElementById('prev-page').addEventListener('click', () => {
+            this.goToPage(this.currentPage - 1);
+        });
+
+        document.getElementById('next-page').addEventListener('click', () => {
+            this.goToPage(this.currentPage + 1);
+        });
+
         // Logout button
         document.getElementById('logout-btn').addEventListener('click', () => {
             this.logout();
@@ -244,6 +271,9 @@ class BookshelfLibrary {
 
         // Initialize filter size from localStorage
         this.initializeFilterSize();
+
+        // Initialize book display from localStorage
+        this.initializeBookDisplay();
 
         // Status change handler for date fields
         document.getElementById('book-status').addEventListener('change', (e) => {
@@ -622,6 +652,16 @@ class BookshelfLibrary {
         }).join(' ');
     }
 
+    getFormatTags(formats) {
+        // Handle both array and single format for backward compatibility
+        const formatArray = Array.isArray(formats) ? formats : [formats];
+
+        return formatArray.map(format => {
+            const formatDisplay = format || 'Physical';
+            return `<span class="format-tag">${formatDisplay}</span>`;
+        }).join('');
+    }
+
     getSelectedFormats() {
         const checkboxes = document.querySelectorAll('input[name="format"]:checked');
         return Array.from(checkboxes).map(cb => cb.value);
@@ -716,6 +756,8 @@ class BookshelfLibrary {
             }
         }
     }
+
+
 
     validateFormatSelection() {
         const formatCheckboxes = document.querySelectorAll('input[name="format"]');
@@ -853,6 +895,13 @@ class BookshelfLibrary {
         });
 
         this.sortBooks();
+
+        // Reset to first page when filters change (unless preserving page)
+        if (!this.preserveCurrentPage) {
+            this.currentPage = 1;
+        }
+        this.preserveCurrentPage = false; // Reset flag after use
+
         this.renderBooks();
         this.updateFilterCounts();
     }
@@ -1527,28 +1576,65 @@ class BookshelfLibrary {
         const emptyState = document.getElementById('empty-state');
         const bookCountElement = document.getElementById('book-count');
 
-        // Update book count display
-        const count = this.filteredBooks.length;
-        const totalBooks = this.books.length;
+        // Get current display mode
+        const isListView = bookshelf && bookshelf.classList.contains('book-display-list');
+        const booksPerPage = isListView ? this.booksPerPage.list : this.booksPerPage.grid;
 
-        if (count === totalBooks) {
-            bookCountElement.textContent = `Showing ${count} book${count !== 1 ? 's' : ''}`;
-        } else {
-            bookCountElement.textContent = `Showing ${count} of ${totalBooks} book${totalBooks !== 1 ? 's' : ''}`;
+        // Calculate pagination
+        const totalFiltered = this.filteredBooks.length;
+        const totalPages = Math.ceil(totalFiltered / booksPerPage);
+
+        // Ensure current page is valid
+        if (this.currentPage > totalPages && totalPages > 0) {
+            this.currentPage = totalPages;
+        }
+        if (this.currentPage < 1) {
+            this.currentPage = 1;
         }
 
-        if (this.filteredBooks.length === 0) {
+        // Calculate start and end indices for current page
+        const startIndex = (this.currentPage - 1) * booksPerPage;
+        const endIndex = Math.min(startIndex + booksPerPage, totalFiltered);
+        const booksToShow = this.filteredBooks.slice(startIndex, endIndex);
+
+        // Update book count display
+        if (bookCountElement) {
+            if (totalFiltered === 0) {
+                bookCountElement.textContent = 'Showing 0 books';
+            } else {
+                bookCountElement.textContent = `Showing ${startIndex + 1}-${endIndex} of ${totalFiltered} book${totalFiltered !== 1 ? 's' : ''}`;
+            }
+        }
+
+        // Handle empty state
+        if (totalFiltered === 0) {
             bookshelf.innerHTML = '';
             if (emptyState) emptyState.classList.remove('hidden');
+            this.updatePagination(0);
             return;
         }
 
         if (emptyState) emptyState.classList.add('hidden');
 
-        bookshelf.innerHTML = this.filteredBooks.map(book => this.createBookCard(book)).join('');
+        // Render books for current page
+        bookshelf.innerHTML = booksToShow.map(book => this.createBookCard(book)).join('');
+
+        // Update pagination controls
+        this.updatePagination(totalPages);
     }
 
     createBookCard(book) {
+        const bookshelf = document.querySelector('.bookshelf');
+        const isListView = bookshelf && bookshelf.classList.contains('book-display-list');
+
+        if (isListView) {
+            return this.createListViewCard(book);
+        } else {
+            return this.createGridViewCard(book);
+        }
+    }
+
+    createGridViewCard(book) {
         const coverUrl = book.coverUrl || '';
 
         return `
@@ -1561,6 +1647,45 @@ class BookshelfLibrary {
                     <div class="bottom-badges">
                         <span class="badge status-${book.status?.toLowerCase() || 'tbr'}">${book.status || 'TBR'}</span>
                         ${this.getFormatBadges(book.format)}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    createListViewCard(book) {
+        const coverUrl = book.coverUrl || '';
+        const rating = book.user_rating || book.userRating || book.rating || 0;
+        const seriesInfo = book.series && book.series !== 'No' && book.seriesName ?
+            `<span class="series-badge">${book.seriesName} #${book.seriesNumber || '?'}</span>` : '';
+        const synopsis = book.synopsis || book.description || '';
+        const truncatedSynopsis = synopsis.length > 500 ? synopsis.substring(0, 500) + '...' : synopsis;
+        return `
+            <div class="book-card" data-isbn="${book.isbn}">
+                <div class="book-cover-container">
+                    ${coverUrl ?
+                        `<img src="${coverUrl}" alt="${book.title}" class="book-cover" loading="lazy">` :
+                        `<div class="book-cover-placeholder">No Cover</div>`
+                    }
+                </div>
+                <div class="book-info">
+                    <div class="book-title-author">
+                        <div class="book-title">${book.title}</div>
+                        <div class="book-author">by ${book.author}</div>
+                        ${seriesInfo ? `<div class="book-series-info">${seriesInfo}</div>` : ''}
+                    </div>
+                    <div class="book-synopsis">${truncatedSynopsis}</div>
+                    <div class="book-rating-section">
+                        <div class="book-rating-list">
+                            ${rating > 0 ?
+                                `<div class="stars">${this.generateStars(rating)}</div>` :
+                                `<div class="no-rating">Not Rated</div>`
+                            }
+                        </div>
+                        <div class="book-tags">
+                            <span class="badge status-${book.status?.toLowerCase() || 'tbr'}">${book.status || 'TBR'}</span>
+                            ${this.getFormatBadges(book.format)}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1708,7 +1833,10 @@ class BookshelfLibrary {
                     <div class="book-ratings">
                         <div class="rating-item">
                             <span class="rating-label">My Rating:</span>
-                            <div class="stars">${userStars}</div>
+                            ${(book.userRating || 0) > 0 ?
+                                `<div class="stars">${userStars}</div>` :
+                                `<span class="no-rating-text">Not Rated</span>`
+                            }
                         </div>
                     </div>
 
@@ -1934,6 +2062,183 @@ class BookshelfLibrary {
         localStorage.setItem('filterSize', size);
     }
 
+    initializeBookDisplay() {
+        const bookDisplay = localStorage.getItem('bookDisplay') || 'default';
+        const radio = document.querySelector(`input[name="book-display"][value="${bookDisplay}"]`);
+
+        if (radio) {
+            radio.checked = true;
+        }
+
+        this.setBookDisplay(bookDisplay);
+    }
+
+    setBookDisplay(display) {
+        const bookshelf = document.querySelector('.bookshelf');
+
+        // Remove existing display classes
+        bookshelf.classList.remove('book-display-default', 'book-display-list');
+
+        // Add new display class
+        bookshelf.classList.add(`book-display-${display}`);
+
+        // Save to localStorage
+        localStorage.setItem('bookDisplay', display);
+
+        // Reset to first page when changing display mode
+        this.currentPage = 1;
+
+        // Re-render books to apply list view if needed
+        this.renderBooks();
+    }
+
+    updatePaginationOptions() {
+        const isListView = document.querySelector('input[name="book-display"]:checked').value === 'list';
+        const title = document.getElementById('pagination-setting-title');
+        const container = document.getElementById('pagination-options');
+
+        // Update title
+        title.textContent = isListView ? 'Books Per Page (List)' : 'Books Per Page (Grid)';
+
+        // Clear existing options
+        container.innerHTML = '';
+
+        // Get current setting from localStorage
+        const currentSetting = localStorage.getItem(`booksPerPage_${isListView ? 'list' : 'grid'}`) ||
+                              (isListView ? '20' : '40');
+
+        // Generate options based on view type
+        const options = isListView ?
+            [10, 15, 20, 25, 30] : // List: 10, 15, 20, 25, 30
+            [10, 20, 30, 40, 50];  // Grid: 10, 20, 30, 40, 50
+
+        options.forEach((count) => {
+            const input = document.createElement('input');
+            input.type = 'radio';
+            input.id = `books-per-page-${count}`;
+            input.name = 'books-per-page';
+            input.value = count;
+            input.checked = count.toString() === currentSetting;
+
+            const label = document.createElement('label');
+            label.htmlFor = `books-per-page-${count}`;
+            label.className = 'size-option';
+            label.textContent = count.toString();
+
+            input.addEventListener('change', () => {
+                if (input.checked) {
+                    this.setBooksPerPage(count);
+                }
+            });
+
+            container.appendChild(input);
+            container.appendChild(label);
+        });
+    }
+
+    setBooksPerPage(count) {
+        const isListView = document.querySelector('input[name="book-display"]:checked').value === 'list';
+        const viewType = isListView ? 'list' : 'grid';
+
+        // Update the setting
+        this.booksPerPage[viewType] = count;
+
+        // Save to localStorage
+        localStorage.setItem(`booksPerPage_${viewType}`, count.toString());
+
+        // Reset to first page and re-render
+        this.currentPage = 1;
+        this.renderBooks();
+    }
+
+    updatePagination(totalPages) {
+        const paginationContainer = document.getElementById('pagination-container');
+        const prevBtn = document.getElementById('prev-page');
+        const nextBtn = document.getElementById('next-page');
+
+        // Show/hide pagination based on whether we need it
+        if (totalPages <= 1) {
+            paginationContainer.style.display = 'none';
+            return;
+        }
+
+        paginationContainer.style.display = 'flex';
+
+        // Update prev/next buttons
+        prevBtn.disabled = this.currentPage <= 1;
+        nextBtn.disabled = this.currentPage >= totalPages;
+
+        // Generate page numbers
+        this.generatePageNumbers(totalPages);
+    }
+
+    generatePageNumbers(totalPages) {
+        const pageNumbers = document.getElementById('page-numbers');
+        pageNumbers.innerHTML = '';
+
+        // Always show first page
+        if (totalPages >= 1) {
+            this.addPageNumber(1, pageNumbers);
+        }
+
+        // Add ellipsis and pages around current page if needed
+        if (totalPages > 7) {
+            if (this.currentPage > 4) {
+                this.addEllipsis(pageNumbers);
+            }
+
+            // Show pages around current page
+            const start = Math.max(2, this.currentPage - 1);
+            const end = Math.min(totalPages - 1, this.currentPage + 1);
+
+            for (let i = start; i <= end; i++) {
+                if (i !== 1 && i !== totalPages) {
+                    this.addPageNumber(i, pageNumbers);
+                }
+            }
+
+            if (this.currentPage < totalPages - 3) {
+                this.addEllipsis(pageNumbers);
+            }
+        } else {
+            // Show all pages if 7 or fewer
+            for (let i = 2; i < totalPages; i++) {
+                this.addPageNumber(i, pageNumbers);
+            }
+        }
+
+        // Always show last page if more than 1 page
+        if (totalPages > 1) {
+            this.addPageNumber(totalPages, pageNumbers);
+        }
+    }
+
+    addPageNumber(pageNum, container) {
+        const pageBtn = document.createElement('button');
+        pageBtn.className = `page-number ${pageNum === this.currentPage ? 'active' : ''}`;
+        pageBtn.textContent = pageNum;
+        pageBtn.addEventListener('click', () => this.goToPage(pageNum));
+        container.appendChild(pageBtn);
+    }
+
+    addEllipsis(container) {
+        const ellipsis = document.createElement('span');
+        ellipsis.className = 'page-ellipsis';
+        ellipsis.textContent = '...';
+        container.appendChild(ellipsis);
+    }
+
+    goToPage(pageNum) {
+        const isListView = document.querySelector('.bookshelf').classList.contains('book-display-list');
+        const booksPerPage = isListView ? this.booksPerPage.list : this.booksPerPage.grid;
+        const totalPages = Math.ceil(this.filteredBooks.length / booksPerPage);
+
+        if (pageNum >= 1 && pageNum <= totalPages) {
+            this.currentPage = pageNum;
+            this.renderBooks();
+        }
+    }
+
     closeModals(clearEditingState = true) {
         document.querySelectorAll('.modal').forEach(modal => {
             modal.classList.add('hidden');
@@ -2071,6 +2376,8 @@ class BookshelfLibrary {
             }
         }
 
+
+
         // Show loading state
         submitBtn.textContent = 'Adding Book...';
         submitBtn.disabled = true;
@@ -2177,6 +2484,9 @@ class BookshelfLibrary {
                 // No API fetching - using manual data entry only
             }
 
+            // Store current page for editing (to preserve pagination)
+            const currentPageBeforeUpdate = this.editingBook ? this.currentPage : 1;
+
             // Handle editing vs adding
             if (this.editingBook) {
                 // Update existing book in database
@@ -2219,6 +2529,7 @@ class BookshelfLibrary {
             }
 
             // Clear editing state after processing
+            const wasEditing = !!this.editingBook;
             this.editingBook = null;
 
             this.populateSeriesFilter(); // Repopulate series filter after adding/updating book
@@ -2227,6 +2538,13 @@ class BookshelfLibrary {
             this.populateYearReadFilter(); // Repopulate year read filter after adding/updating book
             this.populatePageCountFilter(); // Repopulate page count filter after adding/updating book
             this.populateDatePublishedFilter(); // Repopulate date published filter after adding/updating book
+
+            // Preserve current page if we were editing (to stay on same page)
+            if (wasEditing) {
+                this.currentPage = currentPageBeforeUpdate;
+                this.preserveCurrentPage = true; // Flag to prevent page reset in applyFilters
+            }
+
             this.applyFilters();
             this.updateStats();
             this.closeModals();
@@ -2445,6 +2763,20 @@ class BookshelfLibrary {
 
             // Wait a moment for the modal to close, then open the edit form
             setTimeout(() => {
+                // Handle format first - convert old "Both" format to array and clean it
+                let bookFormats = book.format;
+                console.log('Original book format:', bookFormats);
+
+                if (bookFormats === 'Both') {
+                    bookFormats = ['Physical', 'Kindle'];
+                } else if (!Array.isArray(bookFormats)) {
+                    bookFormats = [bookFormats || 'Physical'];
+                }
+
+                // Clean the format array to remove duplicates and limit to 3
+                bookFormats = this.cleanFormatArray(bookFormats);
+                console.log('Cleaned book formats:', bookFormats);
+
                 // Pre-fill the add book form with existing data
                 document.getElementById('book-title').value = book.title || '';
                 document.getElementById('book-author').value = book.author || '';
@@ -2457,27 +2789,26 @@ class BookshelfLibrary {
                 document.getElementById('book-publisher').value = book.publisher || '';
                 document.getElementById('book-status').value = book.status || 'TBR';
 
+                // Set format checkboxes BEFORE other operations
+                console.log('Setting format checkboxes:', bookFormats);
+                document.querySelectorAll('input[name="format"]').forEach(cb => {
+                    cb.checked = false;
+                });
+                bookFormats.forEach(format => {
+                    const checkbox = document.querySelector(`input[name="format"][value="${format}"]`);
+                    if (checkbox) {
+                        console.log(`Checking format: ${format}`);
+                        checkbox.checked = true;
+                    } else {
+                        console.warn(`Format checkbox not found: ${format}`);
+                    }
+                });
+
                 // Update image preview
                 this.updateImagePreview(book.coverUrl || '');
 
                 // Update character count
                 this.updateCharacterCount((book.synopsis || '').length);
-
-                // Handle format - convert old "Both" format to array and clean it
-                let bookFormats = book.format;
-                if (bookFormats === 'Both') {
-                    bookFormats = ['Physical', 'Kindle'];
-                } else if (!Array.isArray(bookFormats)) {
-                    bookFormats = [bookFormats || 'Physical'];
-                }
-
-                // Clean the format array to remove duplicates and limit to 3
-                bookFormats = this.cleanFormatArray(bookFormats);
-
-                // Set formats after a small delay to avoid timing issues with form reset
-                setTimeout(() => {
-                    this.setSelectedFormats(bookFormats);
-                }, 50);
 
                 // Handle date fields based on status
                 this.handleStatusChange(book.status || 'TBR');
@@ -2520,6 +2851,12 @@ class BookshelfLibrary {
 
                 title.textContent = 'Edit Book';
                 submitBtn.textContent = 'Update Book';
+
+                // Validate format selection
+                this.validateFormatSelection();
+
+                // Log final state
+                console.log('Final checked formats:', this.getSelectedFormats());
 
                 // Open the modal
                 modal.classList.remove('hidden');
