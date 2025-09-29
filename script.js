@@ -12,7 +12,6 @@ class BookshelfLibrary {
             pageCount: [],
             publisher: [],
             rating: [],
-            readingTime: [],
             datePublished: [],
             yearRead: [],
             series: []
@@ -63,6 +62,9 @@ class BookshelfLibrary {
     }
 
     async init() {
+        // Make this instance available globally for modal interactions
+        window.bookshelf = this;
+
         // Test database connection first
         await this.testDatabaseConnection();
 
@@ -73,10 +75,21 @@ class BookshelfLibrary {
         this.populateGenreFilter(); // Populate genre filter after books are loaded
         this.populatePublisherFilter(); // Populate publisher filter after books are loaded
         this.populateAuthorFilter(); // Populate author filter after books are loaded
+        this.populateYearReadFilter(); // Populate year read filter after books are loaded
+        this.populatePageCountFilter(); // Populate page count filter after books are loaded
+        this.populateDatePublishedFilter(); // Populate date published filter after books are loaded
         this.updateFilterCounts(); // Update all filter counts
         this.applyFilters(); // Use applyFilters instead of renderBooks directly
         this.updateStats();
         this.updateAuthStatus(); // Initialize authentication status display
+
+        // Add global debug functions
+        window.debugBookshelf = {
+            authenticate: () => { this.isAuthenticated = true; this.updateAuthStatus(); },
+            showBooks: () => console.log('Books:', this.books),
+            showInstance: () => console.log('Bookshelf instance:', this)
+        };
+        console.log('🔧 Debug functions available: window.debugBookshelf');
     }
 
     // Test database connection
@@ -313,9 +326,28 @@ class BookshelfLibrary {
             e.preventDefault();
             this.handleAuthentication();
         });
+
+        // Event delegation for edit and delete buttons in modals
+        document.addEventListener('click', (e) => {
+            console.log('Click detected on:', e.target, 'Classes:', e.target.classList.toString());
+
+            if (e.target.classList.contains('edit-book-btn')) {
+                const isbn = e.target.dataset.isbn;
+                const title = e.target.dataset.title;
+                const author = e.target.dataset.author;
+                console.log('✅ Edit button clicked for ISBN:', isbn, 'Title:', title, 'Author:', author);
+                console.log('✅ Authenticated:', this.isAuthenticated);
+                this.editBook(isbn, title, author);
+            } else if (e.target.classList.contains('delete-book-btn')) {
+                const isbn = e.target.dataset.isbn;
+                const title = e.target.dataset.title;
+                const author = e.target.dataset.author;
+                console.log('✅ Delete button clicked for ISBN:', isbn, 'Title:', title, 'Author:', author);
+                console.log('✅ Authenticated:', this.isAuthenticated);
+                this.deleteBook(isbn, title, author);
+            }
+        });
     }
-
-
 
     async loadBooks() {
         try {
@@ -337,12 +369,15 @@ class BookshelfLibrary {
                 this.showNotification(`Loaded ${this.books.length} books from database`, 'success');
             } else {
                 // Fallback to JSON file
+                console.log('📚 Loading books from JSON file...');
                 const response = await fetch('./data/books.json');
                 if (response.ok) {
                     const data = await response.json();
                     this.books = data.books || [];
+                    console.log(`✅ Loaded ${this.books.length} books from JSON file`);
                     this.migrateBothFormat();
                 } else {
+                    console.log('❌ JSON file not found or not accessible');
                     this.books = [];
                 }
             }
@@ -367,6 +402,8 @@ class BookshelfLibrary {
         }
 
         this.filteredBooks = [...this.books];
+        console.log(`📊 Final book count: ${this.books.length}`);
+        console.log('📊 Books loaded:', this.books.map(b => ({ title: b.title, isbn: b.isbn })));
     }
 
     migrateBothFormat() {
@@ -438,7 +475,7 @@ class BookshelfLibrary {
 
     initializeFilters() {
         // Initialize all filter categories as collapsed
-        const categories = ['status', 'format', 'genre', 'author', 'pageCount', 'publisher', 'rating', 'readingTime', 'datePublished', 'yearRead', 'series'];
+        const categories = ['status', 'format', 'genre', 'author', 'pageCount', 'publisher', 'rating', 'datePublished', 'yearRead', 'series'];
         categories.forEach(category => {
             const options = document.getElementById(`${category}-options`);
             const toggle = document.querySelector(`[data-category="${category}"]`);
@@ -462,7 +499,7 @@ class BookshelfLibrary {
 
     updateFilters() {
         // Collect all checked filters
-        const filterTypes = ['status', 'format', 'genre', 'author', 'pageCount', 'publisher', 'rating', 'readingTime', 'datePublished', 'yearRead', 'series'];
+        const filterTypes = ['status', 'format', 'genre', 'author', 'pageCount', 'publisher', 'rating', 'datePublished', 'yearRead', 'series'];
 
         filterTypes.forEach(type => {
             const checkboxes = document.querySelectorAll(`input[name="${type}"]:checked`);
@@ -565,7 +602,6 @@ class BookshelfLibrary {
             pageCount: [],
             publisher: [],
             rating: [],
-            readingTime: [],
             datePublished: [],
             yearRead: [],
             series: []
@@ -785,45 +821,19 @@ class BookshelfLibrary {
                 }
             }
 
-            // Reading time filter (estimated from page count at 60 pages/hour)
-            if (this.currentFilters.readingTime.length > 0) {
-                const estimatedHours = (book.pageCount || 0) / 60;
-                const matchesRange = this.currentFilters.readingTime.some(range => {
-                    if (range === '0-3') return estimatedHours <= 3;
-                    if (range === '3-6') return estimatedHours >= 3 && estimatedHours <= 6;
-                    if (range === '6-9') return estimatedHours >= 6 && estimatedHours <= 9;
-                    if (range === '9-12') return estimatedHours >= 9 && estimatedHours <= 12;
-                    if (range === '12-15') return estimatedHours >= 12 && estimatedHours <= 15;
-                    if (range === '15+') return estimatedHours >= 15;
-                    return false;
-                });
-                if (!matchesRange) return false;
-            }
 
-            // Date Published filter
+
+            // Date Published filter (individual years)
             if (this.currentFilters.datePublished.length > 0) {
                 const publishedDate = book.datePublished ? new Date(book.datePublished) : null;
                 if (!publishedDate) return false; // Skip books without publication date
 
                 const publishedYear = publishedDate.getFullYear();
-                const matchesRange = this.currentFilters.datePublished.some(range => {
-                    if (range === '2020-2029') return publishedYear >= 2020 && publishedYear <= 2029;
-                    if (range === '2010-2019') return publishedYear >= 2010 && publishedYear <= 2019;
-                    if (range === '2000-2009') return publishedYear >= 2000 && publishedYear <= 2009;
-                    if (range === '1990-1999') return publishedYear >= 1990 && publishedYear <= 1999;
-                    if (range === '1980-1989') return publishedYear >= 1980 && publishedYear <= 1989;
-                    if (range === '1970-1979') return publishedYear >= 1970 && publishedYear <= 1979;
-                    if (range === '1960-1969') return publishedYear >= 1960 && publishedYear <= 1969;
-                    if (range === '1950-1959') return publishedYear >= 1950 && publishedYear <= 1959;
-                    if (range === '1940-1949') return publishedYear >= 1940 && publishedYear <= 1949;
-                    if (range === '1930-1939') return publishedYear >= 1930 && publishedYear <= 1939;
-                    if (range === '1920-1929') return publishedYear >= 1920 && publishedYear <= 1929;
-                    if (range === '1910-1919') return publishedYear >= 1910 && publishedYear <= 1919;
-                    if (range === '1900-1909') return publishedYear >= 1900 && publishedYear <= 1909;
-                    if (range === 'before-1900') return publishedYear < 1900;
-                    return false;
+                const matchesYear = this.currentFilters.datePublished.some(yearStr => {
+                    const filterYear = parseInt(yearStr);
+                    return publishedYear === filterYear;
                 });
-                if (!matchesRange) return false;
+                if (!matchesYear) return false;
             }
 
             // Series filter
@@ -904,24 +914,20 @@ class BookshelfLibrary {
             }
         }
 
-        // Update year read filter counts
-        const currentYear = new Date().getFullYear();
-        const maxYear = Math.max(currentYear, 2025); // Include 2025 even if current year is less
-        for (let year = 2020; year <= maxYear; year++) {
+        // Update year read filter counts (dynamic years)
+        document.querySelectorAll('input[name="yearRead"]').forEach(checkbox => {
+            const year = parseInt(checkbox.value);
             const count = this.books.filter(book => {
                 if (!book.dateFinished) return false;
                 const finishYear = new Date(book.dateFinished).getFullYear();
                 return finishYear === year;
             }).length;
 
-            const element = document.querySelector(`input[name="yearRead"][value="${year}"]`);
-            if (element) {
-                const countSpan = element.parentElement.querySelector('.filter-count');
-                if (countSpan) {
-                    countSpan.textContent = `(${count})`;
-                }
+            const countSpan = checkbox.parentElement.querySelector('.filter-count');
+            if (countSpan) {
+                countSpan.textContent = `(${count})`;
             }
-        }
+        });
 
         // Update genre filter counts
         document.querySelectorAll('input[name="genre"]').forEach(checkbox => {
@@ -960,87 +966,49 @@ class BookshelfLibrary {
             }
         });
 
-        // Update page count filter counts
-        const pageCountRanges = {
-            '0-100': (pages) => pages >= 0 && pages <= 100,
-            '101-200': (pages) => pages >= 101 && pages <= 200,
-            '201-300': (pages) => pages >= 201 && pages <= 300,
-            '301-400': (pages) => pages >= 301 && pages <= 400,
-            '401-500': (pages) => pages >= 401 && pages <= 500,
-            '501-600': (pages) => pages >= 501 && pages <= 600,
-            '601-700': (pages) => pages >= 601 && pages <= 700,
-            '701-800': (pages) => pages >= 701 && pages <= 800,
-            '801+': (pages) => pages >= 801,
-            '800+': (pages) => pages >= 800
-        };
+        // Update page count filter counts (dynamic ranges)
+        document.querySelectorAll('input[name="pageCount"]').forEach(checkbox => {
+            const rangeValue = checkbox.value;
+            let count = 0;
 
-        Object.keys(pageCountRanges).forEach(range => {
-            const count = this.books.filter(book => {
-                const pages = parseInt(book.pageCount) || 0;
-                return pageCountRanges[range](pages);
-            }).length;
+            if (rangeValue.includes('+')) {
+                // Handle "500+" type ranges
+                const threshold = parseInt(rangeValue.replace('+', ''));
+                count = this.books.filter(book => {
+                    if (!book.pageCount) return false;
+                    const pages = parseInt(book.pageCount);
+                    return pages >= threshold;
+                }).length;
+            } else if (rangeValue.includes('-')) {
+                // Handle "100-200" type ranges
+                const [min, max] = rangeValue.split('-').map(n => parseInt(n));
+                count = this.books.filter(book => {
+                    if (!book.pageCount) return false;
+                    const pages = parseInt(book.pageCount);
+                    return pages >= min && pages <= max;
+                }).length;
+            }
 
-            const element = document.querySelector(`input[name="pageCount"][value="${range}"]`);
-            if (element) {
-                const countSpan = element.parentElement.querySelector('.filter-count');
-                if (countSpan) {
-                    countSpan.textContent = `(${count})`;
-                }
+            const countSpan = checkbox.parentElement.querySelector('.filter-count');
+            if (countSpan) {
+                countSpan.textContent = `(${count})`;
             }
         });
 
-        // Update reading time filter counts
-        const readingTimeRanges = {
-            '0-3': (time) => time >= 0 && time <= 3,
-            '3-6': (time) => time > 3 && time <= 6,
-            '6-9': (time) => time > 6 && time <= 9,
-            '9-12': (time) => time > 9 && time <= 12,
-            '12-15': (time) => time > 12 && time <= 15,
-            '15+': (time) => time > 15
-        };
 
-        Object.keys(readingTimeRanges).forEach(range => {
-            const count = this.books.filter(book => {
-                const time = parseFloat(book.readingTime) || 0;
-                return readingTimeRanges[range](time);
-            }).length;
 
-            const element = document.querySelector(`input[name="readingTime"][value="${range}"]`);
-            if (element) {
-                const countSpan = element.parentElement.querySelector('.filter-count');
-                if (countSpan) {
-                    countSpan.textContent = `(${count})`;
-                }
-            }
-        });
-
-        // Update date published filter counts
-        const datePublishedRanges = {
-            '2020-2029': (year) => year >= 2020 && year <= 2029,
-            '2010-2019': (year) => year >= 2010 && year <= 2019,
-            '2000-2009': (year) => year >= 2000 && year <= 2009,
-            '1990-1999': (year) => year >= 1990 && year <= 1999,
-            '1980-1989': (year) => year >= 1980 && year <= 1989,
-            '1970-1979': (year) => year >= 1970 && year <= 1979,
-            '1960-1969': (year) => year >= 1960 && year <= 1969,
-            '1950-1959': (year) => year >= 1950 && year <= 1959,
-            '1940-1949': (year) => year >= 1940 && year <= 1949,
-            '1930-1939': (year) => year >= 1930 && year <= 1939
-        };
-
-        Object.keys(datePublishedRanges).forEach(range => {
+        // Update date published filter counts (individual years)
+        document.querySelectorAll('input[name="datePublished"]').forEach(checkbox => {
+            const year = parseInt(checkbox.value);
             const count = this.books.filter(book => {
                 if (!book.datePublished) return false;
-                const year = new Date(book.datePublished).getFullYear();
-                return datePublishedRanges[range](year);
+                const bookYear = new Date(book.datePublished).getFullYear();
+                return bookYear === year;
             }).length;
 
-            const element = document.querySelector(`input[name="datePublished"][value="${range}"]`);
-            if (element) {
-                const countSpan = element.parentElement.querySelector('.filter-count');
-                if (countSpan) {
-                    countSpan.textContent = `(${count})`;
-                }
+            const countSpan = checkbox.parentElement.querySelector('.filter-count');
+            if (countSpan) {
+                countSpan.textContent = `(${count})`;
             }
         });
 
@@ -1150,6 +1118,130 @@ class BookshelfLibrary {
         });
     }
 
+    populateYearReadFilter() {
+        const yearContainer = document.getElementById('yearRead-options');
+        if (!yearContainer) return;
+
+        // Get all unique years from books that have been finished
+        const years = [...new Set(
+            this.books
+                .filter(book => book.dateFinished)
+                .map(book => {
+                    const finishDate = new Date(book.dateFinished);
+                    return finishDate.getFullYear();
+                })
+                .filter(year => !isNaN(year)) // Filter out invalid years
+        )].sort((a, b) => b - a); // Sort in descending order (newest first)
+
+        // Clear existing options
+        yearContainer.innerHTML = '';
+
+        // If no years found, show a message
+        if (years.length === 0) {
+            yearContainer.innerHTML = '<p class="no-options">No books finished yet</p>';
+            return;
+        }
+
+        // Add year options
+        years.forEach(year => {
+            const label = document.createElement('label');
+            label.className = 'filter-option';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.name = 'yearRead';
+            checkbox.value = year.toString();
+            checkbox.addEventListener('change', () => this.updateFilters());
+
+            const span = document.createElement('span');
+            span.innerHTML = `${year} <span class="filter-count">(0)</span>`;
+
+            label.appendChild(checkbox);
+            label.appendChild(span);
+            yearContainer.appendChild(label);
+        });
+    }
+
+    populatePageCountFilter() {
+        const pageCountContainer = document.getElementById('pageCount-options');
+        if (!pageCountContainer) return;
+
+        // Get all page counts from books
+        const pageCounts = this.books
+            .filter(book => book.pageCount && !isNaN(book.pageCount))
+            .map(book => parseInt(book.pageCount));
+
+        console.log('📊 Page counts found:', pageCounts);
+
+        if (pageCounts.length === 0) {
+            pageCountContainer.innerHTML = '<p class="no-options">No page count data available</p>';
+            return;
+        }
+
+        // Find the maximum page count
+        const maxPages = Math.max(...pageCounts);
+        console.log('📊 Max pages:', maxPages);
+
+        // Create 100-page increment ranges
+        const ranges = [];
+
+        // Start from 1 and go up in 100-page increments
+        let currentStart = 1;
+
+        while (currentStart <= maxPages) {
+            let currentEnd = currentStart + 99;
+
+            // For the last range, if it would go beyond maxPages significantly, make it a "+" range
+            if (currentStart > maxPages) break;
+
+            // Check if any books fall in this range
+            const booksInRange = pageCounts.filter(pages => pages >= currentStart && pages <= currentEnd);
+            console.log(`📊 Range ${currentStart}-${currentEnd}: ${booksInRange.length} books`, booksInRange);
+
+            if (booksInRange.length > 0) {
+                // If this is a high range and there are few books, make it a "+" range
+                if (currentStart >= 800 && currentEnd > maxPages) {
+                    ranges.push({
+                        value: `${currentStart}+`,
+                        label: `${currentStart}+ pages`
+                    });
+                    break;
+                } else {
+                    ranges.push({
+                        value: `${currentStart}-${currentEnd}`,
+                        label: `${currentStart}-${currentEnd} pages`
+                    });
+                }
+            }
+
+            currentStart += 100;
+        }
+
+        // Clear existing options
+        pageCountContainer.innerHTML = '';
+
+        console.log('📊 Final page count ranges:', ranges);
+
+        // Add page count options
+        ranges.forEach(range => {
+            const label = document.createElement('label');
+            label.className = 'filter-option';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.name = 'pageCount';
+            checkbox.value = range.value;
+            checkbox.addEventListener('change', () => this.updateFilters());
+
+            const span = document.createElement('span');
+            span.innerHTML = `${range.label} <span class="filter-count">(0)</span>`;
+
+            label.appendChild(checkbox);
+            label.appendChild(span);
+            pageCountContainer.appendChild(label);
+        });
+    }
+
     populateGenreFilter() {
         const genreContainer = document.getElementById('genre-options');
         if (!genreContainer) return;
@@ -1215,6 +1307,49 @@ class BookshelfLibrary {
             label.appendChild(checkbox);
             label.appendChild(span);
             publisherContainer.appendChild(label);
+        });
+    }
+
+    populateDatePublishedFilter() {
+        const datePublishedContainer = document.getElementById('datePublished-options');
+        if (!datePublishedContainer) return;
+
+        // Get all unique publication years from books
+        const publicationYears = [...new Set(
+            this.books
+                .filter(book => book.datePublished)
+                .map(book => {
+                    const pubDate = new Date(book.datePublished);
+                    return pubDate.getFullYear();
+                })
+                .filter(year => !isNaN(year) && year > 1000) // Filter out invalid years
+        )].sort((a, b) => b - a); // Sort in descending order (newest first)
+
+        if (publicationYears.length === 0) {
+            datePublishedContainer.innerHTML = '<p class="no-options">No publication date data available</p>';
+            return;
+        }
+
+        // Clear existing options
+        datePublishedContainer.innerHTML = '';
+
+        // Add individual year options
+        publicationYears.forEach(year => {
+            const label = document.createElement('label');
+            label.className = 'filter-option';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.name = 'datePublished';
+            checkbox.value = year.toString();
+            checkbox.addEventListener('change', () => this.updateFilters());
+
+            const span = document.createElement('span');
+            span.innerHTML = `${year} <span class="filter-count">(0)</span>`;
+
+            label.appendChild(checkbox);
+            label.appendChild(span);
+            datePublishedContainer.appendChild(label);
         });
     }
 
@@ -1455,12 +1590,9 @@ class BookshelfLibrary {
 
         // Calculate pages for different categories
         const totalPages = this.books.reduce((sum, book) => sum + (book.pageCount || 0), 0);
-        const finishedPages = this.books
-            .filter(book => book.status === 'Finished')
-            .reduce((sum, book) => sum + (book.pageCount || 0), 0);
 
-        // Calculate reading time at 60 pages per hour (only for finished books)
-        const totalHours = Math.round(finishedPages / 60);
+
+
 
         // Calculate books read this year (more robust date checking)
         const currentYear = new Date().getFullYear();
@@ -1493,7 +1625,6 @@ class BookshelfLibrary {
             to_be_read: toBeRead,
             dnf_books: dnfBooks,
             total_pages: totalPages,
-            reading_time: totalHours,
             books_this_year: booksThisYear,
             average_rating: averageRating
         };
@@ -1510,7 +1641,6 @@ class BookshelfLibrary {
             'to-be-read': stats.to_be_read || 0,
             'dnf-books': stats.dnf_books || 0,
             'total-pages': (stats.total_pages || 0).toLocaleString(),
-            'reading-time': `${stats.reading_time || 0}h`,
             'average-rating': stats.average_rating > 0 ? `${stats.average_rating}⭐` : 'N/A'
         };
 
@@ -1526,12 +1656,6 @@ class BookshelfLibrary {
         });
     }
 
-
-
-
-
-
-
     showBookDetail(book) {
         const modal = document.getElementById('book-modal');
         const modalBody = modal.querySelector('.modal-body');
@@ -1539,8 +1663,6 @@ class BookshelfLibrary {
         // Reset scroll position to top
         modalBody.scrollTop = 0;
 
-        const estimatedWords = (book.pageCount || 0) * 275;
-        const estimatedHours = Math.round(estimatedWords / 250 / 60 * 10) / 10;
         const userStars = this.generateStars(book.userRating || 0);
 
         modalBody.innerHTML = `
@@ -1608,10 +1730,7 @@ class BookshelfLibrary {
                             <div class="meta-value">${book.isbn}</div>
                         </div>
                         ` : ''}
-                        <div class="meta-item">
-                            <div class="meta-label">Est. Reading Time</div>
-                            <div class="meta-value">${estimatedHours} hr</div>
-                        </div>
+
                         <div class="meta-item">
                             <div class="meta-label">Genre</div>
                             <div class="meta-value">${book.genre || 'Unknown'}</div>
@@ -1644,8 +1763,14 @@ class BookshelfLibrary {
                     ` : ''}
 
                     <div class="book-actions">
-                        <button onclick="window.bookshelf.editBook('${book.isbn}')" class="btn-secondary">Edit Book</button>
-                        <button onclick="window.bookshelf.deleteBook('${book.isbn}')" class="btn-danger">Remove Book</button>
+                        <button class="btn-secondary edit-book-btn"
+                                data-isbn="${book.isbn}"
+                                data-title="${book.title}"
+                                data-author="${book.author}">Edit Book</button>
+                        <button class="btn-danger delete-book-btn"
+                                data-isbn="${book.isbn}"
+                                data-title="${book.title}"
+                                data-author="${book.author}">Remove Book</button>
                     </div>
                 </div>
             </div>
@@ -1683,8 +1808,6 @@ class BookshelfLibrary {
     showAuthModal() {
         document.getElementById('auth-modal').classList.remove('hidden');
     }
-
-
 
     handleAuthentication() {
         const username = document.getElementById('auth-username').value.trim();
@@ -2101,6 +2224,9 @@ class BookshelfLibrary {
             this.populateSeriesFilter(); // Repopulate series filter after adding/updating book
             this.populateGenreFilter(); // Repopulate genre filter after adding/updating book
             this.populatePublisherFilter(); // Repopulate publisher filter after adding/updating book
+            this.populateYearReadFilter(); // Repopulate year read filter after adding/updating book
+            this.populatePageCountFilter(); // Repopulate page count filter after adding/updating book
+            this.populateDatePublishedFilter(); // Repopulate date published filter after adding/updating book
             this.applyFilters();
             this.updateStats();
             this.closeModals();
@@ -2240,8 +2366,6 @@ class BookshelfLibrary {
         });
     }
 
-
-
     updateProgress(isbn, currentPage) {
         const book = this.books.find(b => b.isbn === isbn);
         if (book) {
@@ -2263,14 +2387,56 @@ class BookshelfLibrary {
         }
     }
 
-    editBook(isbn) {
+    editBook(isbn, title, author) {
+        console.log('🔧 editBook method called with ISBN:', isbn, 'Title:', title, 'Author:', author);
+        console.log('🔧 Authentication status:', this.isAuthenticated);
+
         if (!this.isAuthenticated) {
+            console.log('❌ Not authenticated, showing warning');
             this.showNotification('Please go to Settings to authenticate before editing books', 'warning');
             return;
         }
 
-        const book = this.books.find(b => b.isbn === isbn);
+        console.log('🔧 Looking for book...');
+        console.log('🔧 Available books:', this.books.map(b => ({ title: b.title, isbn: b.isbn, author: b.author })));
+
+        // Try multiple methods to find the book
+        let book = null;
+
+        // Method 1: Find by ISBN (exact match)
+        if (isbn) {
+            book = this.books.find(b => b.isbn === isbn);
+            if (book) console.log('✅ Found book by ISBN (exact match)');
+        }
+
+        // Method 2: Find by ISBN (loose match)
+        if (!book && isbn) {
+            book = this.books.find(b => b.isbn == isbn);
+            if (book) console.log('✅ Found book by ISBN (loose match)');
+        }
+
+        // Method 3: Find by title and author
+        if (!book && title && author) {
+            book = this.books.find(b =>
+                b.title && b.author &&
+                b.title.toLowerCase().trim() === title.toLowerCase().trim() &&
+                b.author.toLowerCase().trim() === author.toLowerCase().trim()
+            );
+            if (book) console.log('✅ Found book by title and author');
+        }
+
+        // Method 4: Find by title only (as last resort)
+        if (!book && title) {
+            book = this.books.find(b =>
+                b.title && b.title.toLowerCase().trim() === title.toLowerCase().trim()
+            );
+            if (book) console.log('✅ Found book by title only');
+        }
+
+        console.log('🔧 Final found book:', book);
+
         if (book) {
+            console.log('✅ Book found, proceeding with edit');
             // Store the original book for updating BEFORE opening the modal
             this.editingBook = book;
 
@@ -2358,12 +2524,62 @@ class BookshelfLibrary {
                 // Open the modal
                 modal.classList.remove('hidden');
             }, 100);
+        } else {
+            console.error('❌ Book not found for ISBN:', isbn);
+            this.showNotification('Book not found for editing', 'error');
         }
     }
 
-    async deleteBook(isbn) {
-        const book = this.books.find(b => b.isbn === isbn);
+    async deleteBook(isbn, title, author) {
+        console.log('🔧 deleteBook method called with ISBN:', isbn, 'Title:', title, 'Author:', author);
+        console.log('🔧 Authentication status:', this.isAuthenticated);
+
+        if (!this.isAuthenticated) {
+            console.log('❌ Not authenticated, showing warning');
+            this.showNotification('Please go to Settings to authenticate before removing books', 'warning');
+            return;
+        }
+
+        console.log('🔧 Looking for book...');
+        console.log('🔧 Available books:', this.books.map(b => ({ title: b.title, isbn: b.isbn, author: b.author })));
+
+        // Try multiple methods to find the book
+        let book = null;
+
+        // Method 1: Find by ISBN (exact match)
+        if (isbn) {
+            book = this.books.find(b => b.isbn === isbn);
+            if (book) console.log('✅ Found book by ISBN (exact match)');
+        }
+
+        // Method 2: Find by ISBN (loose match)
+        if (!book && isbn) {
+            book = this.books.find(b => b.isbn == isbn);
+            if (book) console.log('✅ Found book by ISBN (loose match)');
+        }
+
+        // Method 3: Find by title and author
+        if (!book && title && author) {
+            book = this.books.find(b =>
+                b.title && b.author &&
+                b.title.toLowerCase().trim() === title.toLowerCase().trim() &&
+                b.author.toLowerCase().trim() === author.toLowerCase().trim()
+            );
+            if (book) console.log('✅ Found book by title and author');
+        }
+
+        // Method 4: Find by title only (as last resort)
+        if (!book && title) {
+            book = this.books.find(b =>
+                b.title && b.title.toLowerCase().trim() === title.toLowerCase().trim()
+            );
+            if (book) console.log('✅ Found book by title only');
+        }
+
+        console.log('🔧 Final found book:', book);
+
         if (book) {
+            console.log('✅ Book found, showing confirmation dialog');
             const confirmMessage = `Are you sure you want to remove "${book.title}" by ${book.author || 'Unknown Author'} from your library?\n\nThis action cannot be undone.`;
 
             if (confirm(confirmMessage)) {
@@ -2376,6 +2592,9 @@ class BookshelfLibrary {
                     this.populateSeriesFilter(); // Repopulate series filter after deleting book
                     this.populateGenreFilter(); // Repopulate genre filter after deleting book
                     this.populatePublisherFilter(); // Repopulate publisher filter after deleting book
+                    this.populateYearReadFilter(); // Repopulate year read filter after deleting book
+                    this.populatePageCountFilter(); // Repopulate page count filter after deleting book
+                    this.populateDatePublishedFilter(); // Repopulate date published filter after deleting book
                     this.applyFilters();
                     this.updateStats();
                     this.closeModals();
@@ -2385,10 +2604,11 @@ class BookshelfLibrary {
                     this.showNotification('Failed to delete book. Please try again.', 'error');
                 }
             }
+        } else {
+            console.error('❌ Book not found for ISBN:', isbn);
+            this.showNotification('Book not found for deletion', 'error');
         }
     }
-
-
 }
 
 // Initialize the application when DOM is loaded
