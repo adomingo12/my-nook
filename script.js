@@ -195,6 +195,15 @@ class BookshelfLibrary {
             this.showStatisticsModal();
         });
 
+        // Authentication button
+        document.getElementById('auth-btn').addEventListener('click', () => {
+            if (this.isAuthenticated) {
+                this.logout();
+            } else {
+                this.showAuthModal();
+            }
+        });
+
         // Settings button
         document.getElementById('settings-btn').addEventListener('click', () => {
             this.showSettingsModal();
@@ -242,9 +251,14 @@ class BookshelfLibrary {
             const bookCard = e.target.closest('.book-card');
             if (bookCard) {
                 const isbn = bookCard.dataset.isbn;
-                const book = this.books.find(b => b.isbn === isbn);
+                console.log('Clicked book ISBN:', isbn, typeof isbn);
+                console.log('Available books:', this.books.map(b => ({ isbn: b.isbn, type: typeof b.isbn, title: b.title })));
+                const book = this.books.find(b => b.isbn == isbn); // Use == instead of === for type coercion
+                console.log('Found book:', book);
                 if (book) {
                     this.showBookDetail(book);
+                } else {
+                    console.error('Book not found for ISBN:', isbn);
                 }
             }
         });
@@ -292,23 +306,7 @@ class BookshelfLibrary {
             this.handleSeriesChange(e.target.value);
         });
 
-        // ISBN lookup functionality
-        document.getElementById('book-isbn').addEventListener('blur', (e) => {
-            const isbn = e.target.value.trim();
-            if (isbn && isbn.length >= 10) {
-                this.lookupBookByISBN(isbn);
-            }
-        });
 
-        // Manual ISBN lookup button
-        document.getElementById('lookup-isbn-btn').addEventListener('click', () => {
-            const isbn = document.getElementById('book-isbn').value.trim();
-            if (isbn && isbn.length >= 10) {
-                this.lookupBookByISBN(isbn);
-            } else {
-                this.showNotification('Please enter a valid ISBN first', 'warning');
-            }
-        });
 
         // Authentication form
         document.getElementById('auth-form').addEventListener('submit', (e) => {
@@ -317,101 +315,7 @@ class BookshelfLibrary {
         });
     }
 
-    async lookupBookByISBN(isbn) {
-        // Show loading indicator
-        const isbnField = document.getElementById('book-isbn');
-        const lookupBtn = document.getElementById('lookup-isbn-btn');
-        const originalPlaceholder = isbnField.placeholder;
 
-        isbnField.placeholder = 'Looking up book info...';
-        isbnField.disabled = true;
-        lookupBtn.disabled = true;
-        lookupBtn.textContent = '⏳';
-
-        try {
-            // Clean ISBN (remove hyphens, spaces)
-            const cleanISBN = isbn.replace(/[-\s]/g, '');
-
-            // Call Google Books API
-            const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanISBN}`);
-            const data = await response.json();
-
-            if (data.items && data.items.length > 0) {
-                const book = data.items[0].volumeInfo;
-
-                // Only fill empty fields to allow user editing
-                this.fillBookFormFromAPI(book, cleanISBN);
-
-                this.showNotification('Book information loaded from Google Books!', 'success');
-            } else {
-                this.showNotification('No book found with this ISBN. Please fill in manually.', 'info');
-            }
-        } catch (error) {
-            console.error('Error looking up book:', error);
-            this.showNotification('Failed to lookup book information. Please fill in manually.', 'warning');
-        } finally {
-            // Restore ISBN field and button
-            isbnField.placeholder = originalPlaceholder;
-            isbnField.disabled = false;
-            lookupBtn.disabled = false;
-            lookupBtn.textContent = '🔍';
-        }
-    }
-
-    fillBookFormFromAPI(bookData, isbn) {
-        // Helper function to safely fill field if it's empty
-        const fillIfEmpty = (fieldId, value) => {
-            const field = document.getElementById(fieldId);
-            if (field && !field.value.trim() && value) {
-                field.value = value;
-
-                // Trigger events for fields that need them
-                if (fieldId === 'book-image-url') {
-                    this.updateImagePreview(value);
-                } else if (fieldId === 'book-synopsis') {
-                    this.updateCharacterCount(value.length);
-                }
-            }
-        };
-
-        // Fill basic information
-        fillIfEmpty('book-title', bookData.title || '');
-        fillIfEmpty('book-author', bookData.authors ? bookData.authors.join(', ') : '');
-        fillIfEmpty('book-publisher', bookData.publisher || '');
-        fillIfEmpty('book-synopsis', bookData.description || '');
-        fillIfEmpty('book-pages', bookData.pageCount || '');
-
-        // Handle publication date
-        if (bookData.publishedDate) {
-            // Google Books sometimes returns just year, sometimes full date
-            let pubDate = bookData.publishedDate;
-            if (pubDate.length === 4) {
-                pubDate = `${pubDate}-01-01`; // Default to January 1st if only year
-            } else if (pubDate.length === 7) {
-                pubDate = `${pubDate}-01`; // Default to 1st if only year-month
-            }
-            fillIfEmpty('book-date-published', pubDate);
-        }
-
-        // Handle cover image
-        if (bookData.imageLinks) {
-            const coverUrl = bookData.imageLinks.large ||
-                           bookData.imageLinks.medium ||
-                           bookData.imageLinks.small ||
-                           bookData.imageLinks.thumbnail || '';
-            fillIfEmpty('book-image-url', coverUrl);
-        }
-
-        // Handle genre/categories
-        if (bookData.categories && bookData.categories.length > 0) {
-            fillIfEmpty('book-genre', bookData.categories[0]);
-        }
-
-
-
-        // Set ISBN (clean version)
-        document.getElementById('book-isbn').value = isbn;
-    }
 
     async loadBooks() {
         try {
@@ -801,7 +705,8 @@ class BookshelfLibrary {
                 const titleMatch = book.title?.toLowerCase().includes(searchTerm);
                 const authorMatch = book.author?.toLowerCase().includes(searchTerm);
                 const genreMatch = book.genre?.toLowerCase().includes(searchTerm);
-                const isbnMatch = book.isbn?.toLowerCase().includes(searchTerm);
+                const isbnMatch = book.isbn?.toString().toLowerCase().includes(searchTerm);
+                const seriesMatch = book.seriesName?.toLowerCase().includes(searchTerm);
 
                 // Handle format search (both array and single format)
                 let formatMatch = false;
@@ -811,7 +716,7 @@ class BookshelfLibrary {
                     formatMatch = book.format.toLowerCase().includes(searchTerm);
                 }
 
-                if (!titleMatch && !authorMatch && !genreMatch && !formatMatch && !isbnMatch) return false;
+                if (!titleMatch && !authorMatch && !genreMatch && !formatMatch && !isbnMatch && !seriesMatch) return false;
             }
 
             // Status filter
@@ -1404,13 +1309,51 @@ class BookshelfLibrary {
                     bValue = b.title?.toLowerCase() || '';
                     break;
                 case 'author':
-                    aValue = a.author?.toLowerCase() || '';
-                    bValue = b.author?.toLowerCase() || '';
+                    // For regular author sorting, also maintain series order
+                    const getLastName = (author) => {
+                        if (!author) return '';
+                        const parts = author.trim().split(' ');
+                        return parts[parts.length - 1].toLowerCase();
+                    };
+
+                    const aLastName = getLastName(a.author);
+                    const bLastName = getLastName(b.author);
+
+                    if (aLastName !== bLastName) {
+                        aValue = aLastName;
+                        bValue = bLastName;
+                        break;
+                    }
+
+                    // Same author - check if both are in series
+                    const aIsSeries = a.series && a.seriesName;
+                    const bIsSeries = b.series && b.seriesName;
+
+                    if (aIsSeries && bIsSeries && a.seriesName === b.seriesName) {
+                        // Same series - sort by series number
+                        const aSeriesNumber = parseFloat(a.seriesNumber) || 0;
+                        const bSeriesNumber = parseFloat(b.seriesNumber) || 0;
+                        aValue = aSeriesNumber;
+                        bValue = bSeriesNumber;
+                        break;
+                    } else if (aIsSeries && bIsSeries) {
+                        // Different series - sort by series name
+                        aValue = a.seriesName.toLowerCase();
+                        bValue = b.seriesName.toLowerCase();
+                        break;
+                    } else if (aIsSeries && !bIsSeries) {
+                        // Series books come before standalone books
+                        return direction === 'asc' ? -1 : 1;
+                    } else if (!aIsSeries && bIsSeries) {
+                        // Standalone books come after series books
+                        return direction === 'asc' ? 1 : -1;
+                    }
+
+                    // Both standalone or fallback to title
+                    aValue = a.title?.toLowerCase() || '';
+                    bValue = b.title?.toLowerCase() || '';
                     break;
-                case 'publisher':
-                    aValue = a.publisher?.toLowerCase() || '';
-                    bValue = b.publisher?.toLowerCase() || '';
-                    break;
+
                 case 'dateAdded':
                     aValue = new Date(a.dateAdded || 0);
                     bValue = new Date(b.dateAdded || 0);
@@ -1427,10 +1370,7 @@ class BookshelfLibrary {
                     aValue = new Date(a.dateFinished || 0);
                     bValue = new Date(b.dateFinished || 0);
                     break;
-                case 'rating':
-                    aValue = a.userRating || 0;
-                    bValue = b.userRating || 0;
-                    break;
+
                 case 'pageCount':
                     aValue = a.pageCount || 0;
                     bValue = b.pageCount || 0;
@@ -1450,6 +1390,17 @@ class BookshelfLibrary {
     renderBooks() {
         const bookshelf = document.getElementById('bookshelf');
         const emptyState = document.getElementById('empty-state');
+        const bookCountElement = document.getElementById('book-count');
+
+        // Update book count display
+        const count = this.filteredBooks.length;
+        const totalBooks = this.books.length;
+
+        if (count === totalBooks) {
+            bookCountElement.textContent = `Showing ${count} book${count !== 1 ? 's' : ''}`;
+        } else {
+            bookCountElement.textContent = `Showing ${count} of ${totalBooks} book${totalBooks !== 1 ? 's' : ''}`;
+        }
 
         if (this.filteredBooks.length === 0) {
             bookshelf.innerHTML = '';
@@ -1585,6 +1536,9 @@ class BookshelfLibrary {
         const modal = document.getElementById('book-modal');
         const modalBody = modal.querySelector('.modal-body');
 
+        // Reset scroll position to top
+        modalBody.scrollTop = 0;
+
         const estimatedWords = (book.pageCount || 0) * 275;
         const estimatedHours = Math.round(estimatedWords / 250 / 60 * 10) / 10;
         const userStars = this.generateStars(book.userRating || 0);
@@ -1625,7 +1579,7 @@ class BookshelfLibrary {
 
                     ${book.series ? `
                         <div class="book-series-info">
-                            <span class="series-badge">📚 ${book.seriesName} #${book.seriesNumber}</span>
+                            <span class="series-badge">${book.seriesName} #${book.seriesNumber}</span>
                         </div>
                     ` : ''}
 
@@ -1726,6 +1680,10 @@ class BookshelfLibrary {
         document.getElementById('settings-modal').classList.remove('hidden');
     }
 
+    showAuthModal() {
+        document.getElementById('auth-modal').classList.remove('hidden');
+    }
+
 
 
     handleAuthentication() {
@@ -1738,7 +1696,7 @@ class BookshelfLibrary {
             errorDiv.textContent = 'Configuration file missing. Please copy config.example.js to config.js and update with your credentials.';
             errorDiv.classList.remove('hidden');
             document.getElementById('auth-password').value = '';
-            this.showNotification('⚠️ Config file missing. Check config.example.js for setup instructions.', 'warning');
+            this.showNotification('Config file missing. Check config.example.js for setup instructions.', 'warning');
             return;
         }
 
@@ -1752,7 +1710,7 @@ class BookshelfLibrary {
         if (isValid) {
             this.isAuthenticated = true;
             this.updateAuthStatus();
-            this.showNotification('✅ Authentication successful!', 'success');
+            this.showNotification('Authentication successful!', 'success');
 
             // Clear form fields
             document.getElementById('auth-username').value = '';
@@ -1776,24 +1734,33 @@ class BookshelfLibrary {
         document.getElementById('auth-password').value = '';
         document.getElementById('auth-error').classList.add('hidden');
 
-        this.showNotification('🔓 Logged out successfully', 'info');
+        this.showNotification('Logged out successfully', 'info');
     }
 
     updateAuthStatus() {
         const statusText = document.getElementById('auth-status-text');
         const logoutBtn = document.getElementById('logout-btn');
         const authFormContainer = document.getElementById('auth-form-container');
+        const authBtn = document.getElementById('auth-btn');
 
         if (this.isAuthenticated) {
-            statusText.textContent = '🔓 Authenticated';
+            statusText.textContent = 'Authenticated';
             statusText.style.color = '#059669';
             logoutBtn.classList.remove('hidden');
             if (authFormContainer) authFormContainer.classList.add('hidden');
+
+            // Update header button
+            authBtn.textContent = 'Logout';
+            authBtn.classList.add('authenticated');
         } else {
-            statusText.textContent = '🔒 Not Authenticated';
+            statusText.textContent = 'Not Authenticated';
             statusText.style.color = 'var(--text-secondary)';
             logoutBtn.classList.add('hidden');
             if (authFormContainer) authFormContainer.classList.remove('hidden');
+
+            // Update header button
+            authBtn.textContent = 'Authenticate';
+            authBtn.classList.remove('authenticated');
         }
     }
 
@@ -1821,7 +1788,7 @@ class BookshelfLibrary {
     }
 
     initializeFilterSize() {
-        const filterSize = localStorage.getItem('filterSize') || 'medium';
+        const filterSize = localStorage.getItem('filterSize') || 'small';
         const radio = document.querySelector(`input[name="filter-size"][value="${filterSize}"]`);
 
         if (radio) {
@@ -1912,7 +1879,7 @@ class BookshelfLibrary {
         const datePublished = document.getElementById('book-date-published').value;
         const publisher = document.getElementById('book-publisher').value.trim();
         const imageUrl = document.getElementById('book-image-url').value.trim();
-        const isbn = document.getElementById('book-isbn').value.trim();
+        const isbn = document.getElementById('book-isbn').value.trim().replace(/[-\s]/g, ''); // Remove hyphens and spaces
         const selectedFormats = this.cleanFormatArray(this.getSelectedFormats());
         const rating = parseInt(document.getElementById('book-rating').value) || 0;
         const status = document.getElementById('book-status').value;
@@ -2231,16 +2198,16 @@ class BookshelfLibrary {
         notification.className = `notification notification-${type}`;
         notification.textContent = message;
 
-        // Calculate position based on existing notifications
+        // Calculate position based on existing notifications (from bottom)
         const existingNotifications = document.querySelectorAll('.notification');
-        let topPosition = 20; // Start at 20px from top
+        let bottomPosition = 20; // Start at 20px from top
 
         existingNotifications.forEach(existing => {
             const rect = existing.getBoundingClientRect();
-            topPosition += rect.height + 10; // Add height + 10px margin
+            bottomPosition += rect.height + 10; // Add height + 10px margin
         });
 
-        notification.style.top = `${topPosition}px`;
+        notification.style.bottom = `${bottomPosition}px`;
 
         // Add to page
         document.body.appendChild(notification);
@@ -2263,12 +2230,13 @@ class BookshelfLibrary {
 
     repositionNotifications() {
         const notifications = document.querySelectorAll('.notification');
-        let topPosition = 20;
+        let bottomPosition = 20;
 
         notifications.forEach(notification => {
-            notification.style.top = `${topPosition}px`;
+            notification.style.bottom = `${bottomPosition}px`;
+            notification.style.top = 'auto'; // Clear any existing top positioning
             const rect = notification.getBoundingClientRect();
-            topPosition += rect.height + 10;
+            bottomPosition += rect.height + 10;
         });
     }
 

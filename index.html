@@ -24,6 +24,7 @@
                 <h1>My Reading Nook <span class="author-credit">by Alicia Domingo</span></h1>
             </div>
             <div class="header-controls">
+                <button id="auth-btn" class="auth-btn" title="Authentication">Authenticate</button>
                 <button id="settings-btn" class="settings-btn" title="Settings">Settings</button>
             </div>
         </div>
@@ -371,8 +372,6 @@
                                     <option value="title-desc">Title (Z-A)</option>
                                     <option value="author-asc">Author (A-Z)</option>
                                     <option value="author-desc">Author (Z-A)</option>
-                                    <option value="publisher-asc">Publisher (A-Z)</option>
-                                    <option value="publisher-desc">Publisher (Z-A)</option>
                                     <option value="dateAdded-desc">Date Added (Newest First)</option>
                                     <option value="dateAdded-asc">Date Added (Oldest First)</option>
                                     <option value="datePublished-desc">Date Published (Newest First)</option>
@@ -381,8 +380,6 @@
                                     <option value="dateStarted-asc">Date Started (Oldest First)</option>
                                     <option value="dateFinished-desc">Date Finished (Recent First)</option>
                                     <option value="dateFinished-asc">Date Finished (Oldest First)</option>
-                                    <option value="rating-desc">Rating (Highest First)</option>
-                                    <option value="rating-asc">Rating (Lowest First)</option>
                                     <option value="pageCount-desc">Page Count (Most Pages)</option>
                                     <option value="pageCount-asc">Page Count (Least Pages)</option>
                                 </select>
@@ -401,6 +398,11 @@
 
 
 
+
+            <!-- Book Count Display -->
+            <div class="book-count-container">
+                <span id="book-count" class="book-count">Showing 0 books</span>
+            </div>
 
             <!-- Bookshelf Display -->
             <section class="bookshelf-container">
@@ -460,9 +462,9 @@
                         <label class="setting-label">
                             <span>Filter Bar Size</span>
                             <div class="size-selector">
-                                <input type="radio" id="filter-size-small" name="filter-size" value="small">
+                                <input type="radio" id="filter-size-small" name="filter-size" value="small" checked>
                                 <label for="filter-size-small" class="size-option">Small</label>
-                                <input type="radio" id="filter-size-medium" name="filter-size" value="medium" checked>
+                                <input type="radio" id="filter-size-medium" name="filter-size" value="medium">
                                 <label for="filter-size-medium" class="size-option">Medium</label>
                                 <input type="radio" id="filter-size-large" name="filter-size" value="large">
                                 <label for="filter-size-large" class="size-option">Large</label>
@@ -470,39 +472,48 @@
                         </label>
                     </div>
 
-                    <!-- Authentication Section -->
-                    <div class="setting-section">
-                        <h3>Authentication</h3>
-                        <div class="auth-status">
-                            <span id="auth-status-text">🔒 Not Authenticated</span>
-                            <button id="logout-btn" class="btn-secondary logout-btn hidden">Logout</button>
-                        </div>
 
-                        <!-- Authentication Form (shown when not authenticated) -->
-                        <div id="auth-form-container" class="auth-form-container">
-                            <p class="auth-description">Enter your credentials to add or edit books:</p>
-                            <form id="auth-form">
-                                <div class="form-group">
-                                    <label for="auth-username">Username:</label>
-                                    <input type="text" id="auth-username" placeholder="Enter username..." required autocomplete="username">
-                                </div>
-                                <div class="form-group">
-                                    <label for="auth-password">Password:</label>
-                                    <input type="password" id="auth-password" placeholder="Enter password..." required autocomplete="current-password">
-                                </div>
-                                <div class="auth-error hidden" id="auth-error">
-                                    ❌ Invalid credentials. Please try again.
-                                </div>
-                                <div class="form-actions">
-                                    <button type="submit" class="btn-primary">Authenticate</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Authentication Modal -->
+    <div id="auth-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <button class="modal-close" aria-label="Close modal">×</button>
+            <div class="modal-body">
+                <h2>Authentication</h2>
+                <div class="auth-status">
+                    <span id="auth-status-text">Not Authenticated</span>
+                    <button id="logout-btn" class="btn-secondary logout-btn hidden">Logout</button>
+                </div>
+
+                <!-- Authentication Form (shown when not authenticated) -->
+                <div id="auth-form-container" class="auth-form-container">
+                    <p class="auth-description">Enter your credentials to add or edit books:</p>
+                    <form id="auth-form">
+                        <div class="form-group">
+                            <label for="auth-username">Username:</label>
+                            <input type="text" id="auth-username" placeholder="Enter username..." required autocomplete="username">
+                        </div>
+                        <div class="form-group">
+                            <label for="auth-password">Password:</label>
+                            <input type="password" id="auth-password" placeholder="Enter password..." required autocomplete="current-password">
+                        </div>
+                        <div class="auth-error hidden" id="auth-error">
+                            Invalid credentials. Please try again.
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary">Authenticate</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Statistics Modal -->
     <div id="statistics-modal" class="modal hidden">
         <div class="modal-overlay"></div>
@@ -561,15 +572,12 @@
                     <div class="form-with-preview">
                         <div class="form-fields">
                             <div class="form-group">
-                                <label for="book-isbn">ISBN-13: <span class="api-hint">📚 Auto-fills info</span></label>
-                                <div class="isbn-input-group">
-                                    <input type="text" id="book-isbn" placeholder="Enter ISBN-13 to auto-fill book info..." maxlength="20" required>
-                                    <button type="button" id="lookup-isbn-btn" class="lookup-btn" title="Lookup book information">🔍</button>
-                                </div>
-                            </div>
-                            <div class="form-group">
                                 <label for="book-title">Title:</label>
                                 <input type="text" id="book-title" placeholder="Enter book title..." required>
+                            </div>
+                            <div class="form-group">
+                                <label for="book-isbn">ISBN-13:</label>
+                                <input type="text" id="book-isbn" placeholder="Enter ISBN-13..." maxlength="20" required>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
