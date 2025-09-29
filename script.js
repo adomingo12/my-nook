@@ -130,12 +130,24 @@ class BookshelfLibrary {
         searchInput.addEventListener('input', (e) => {
             this.currentFilters.search = e.target.value.toLowerCase();
             this.applyFilters();
+
+            // Update mobile search input
+            const mobileSearchInput = document.getElementById('mobile-search-input');
+            if (mobileSearchInput && mobileSearchInput.value !== e.target.value) {
+                mobileSearchInput.value = e.target.value;
+            }
         });
-        
+
         clearSearch.addEventListener('click', () => {
             searchInput.value = '';
             this.currentFilters.search = '';
             this.applyFilters();
+
+            // Clear mobile search input
+            const mobileSearchInput = document.getElementById('mobile-search-input');
+            if (mobileSearchInput) {
+                mobileSearchInput.value = '';
+            }
         });
 
         // Filter category toggles
@@ -183,6 +195,10 @@ class BookshelfLibrary {
                 const isInFiltersSidebar = e.target.closest('.filters-sidebar');
                 if (isInFiltersSidebar) {
                     this.updateFilters();
+                    // Close mobile filters after selection on mobile
+                    if (window.innerWidth <= 768) {
+                        setTimeout(() => this.closeMobileFilters(), 300);
+                    }
                 }
             }
         });
@@ -215,6 +231,146 @@ class BookshelfLibrary {
             this.showStatisticsModal();
         });
 
+        // Mobile filter toggle (hamburger menu)
+        document.getElementById('mobile-filter-toggle').addEventListener('click', () => {
+            this.toggleMobileFilters();
+        });
+
+        // Mobile search toggle
+        document.getElementById('mobile-search-toggle').addEventListener('click', () => {
+            this.openMobileSearch();
+        });
+
+        // Mobile search close
+        document.getElementById('mobile-search-close').addEventListener('click', () => {
+            this.closeMobileSearch();
+        });
+
+        // Mobile search input
+        document.getElementById('mobile-search-input').addEventListener('input', (e) => {
+            this.handleSearch(e.target.value);
+        });
+
+        // Close mobile search when clicking outside
+        document.getElementById('mobile-search-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'mobile-search-modal') {
+                this.closeMobileSearch();
+            }
+        });
+
+        // Mobile close button
+        document.getElementById('mobile-close-btn').addEventListener('click', () => {
+            this.closeMobileFilters();
+        });
+
+        // Mobile auth toggle (collapse/expand auth section)
+        document.getElementById('mobile-auth-toggle').addEventListener('click', () => {
+            this.toggleAuthCollapse();
+        });
+
+        // Mobile auth submit
+        document.getElementById('mobile-auth-submit').addEventListener('click', () => {
+            const username = document.getElementById('mobile-auth-username').value;
+            const password = document.getElementById('mobile-auth-password').value;
+            this.authenticate(username, password, true); // true = mobile
+        });
+
+        // Mobile logout button
+        document.getElementById('mobile-logout-btn').addEventListener('click', () => {
+            this.logout(true); // true = mobile
+        });
+
+        // Mobile auth password - submit on Enter
+        document.getElementById('mobile-auth-password').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const username = document.getElementById('mobile-auth-username').value;
+                const password = document.getElementById('mobile-auth-password').value;
+                this.authenticate(username, password, true);
+            }
+        });
+
+        // Mobile filters toggle (collapse/expand filters section)
+        document.getElementById('mobile-filters-toggle').addEventListener('click', () => {
+            this.toggleFiltersCollapse();
+        });
+
+        // Mobile add book button
+        document.getElementById('mobile-add-book-btn').addEventListener('click', () => {
+            this.showAddBookModal();
+            this.closeMobileFilters();
+        });
+
+        // Mobile stats button
+        document.getElementById('mobile-stats-btn').addEventListener('click', () => {
+            this.showStatisticsModal();
+            this.closeMobileFilters();
+        });
+
+        // Mobile sort toggle (collapse/expand sort section)
+        document.getElementById('mobile-sort-toggle').addEventListener('click', () => {
+            this.toggleSortCollapse();
+        });
+
+        // Mobile sort options
+        document.querySelectorAll('.mobile-sort-option').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const sortValue = e.target.dataset.sort;
+
+                // Update active state
+                document.querySelectorAll('.mobile-sort-option').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+
+                // Sync desktop sort select
+                const desktopSort = document.getElementById('sort-select');
+                if (desktopSort) {
+                    desktopSort.value = sortValue;
+                }
+
+                // Apply sort
+                this.currentSort = sortValue;
+                this.applyFilters();
+            });
+        });
+
+        // Mobile settings toggle (collapse/expand settings section)
+        document.getElementById('mobile-settings-toggle').addEventListener('click', () => {
+            this.toggleSettingsCollapse();
+        });
+
+        // Mobile dark mode toggle
+        document.getElementById('mobile-dark-mode-toggle').addEventListener('change', (e) => {
+            this.toggleDarkMode(e.target.checked);
+        });
+
+        // Mobile pagination buttons
+        document.querySelectorAll('.mobile-pagination-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const count = parseInt(e.target.dataset.count);
+                this.booksPerPage.grid = count;
+                localStorage.setItem('booksPerPageGrid', count);
+
+                // Update active state
+                document.querySelectorAll('.mobile-pagination-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+
+                // Reset to first page and re-render
+                this.currentPage = 1;
+                this.renderBooks();
+            });
+        });
+
+        // Close mobile filters when clicking outside
+        document.addEventListener('click', (e) => {
+            const sidebar = document.querySelector('.filters-sidebar');
+            const toggleBtn = document.getElementById('mobile-filter-toggle');
+
+            if (sidebar.classList.contains('mobile-open') &&
+                !sidebar.contains(e.target) &&
+                !toggleBtn.contains(e.target)) {
+                this.closeMobileFilters();
+            }
+        });
+
         // Authentication button
         document.getElementById('auth-btn').addEventListener('click', () => {
             if (this.isAuthenticated) {
@@ -227,6 +383,20 @@ class BookshelfLibrary {
         // Settings button
         document.getElementById('settings-btn').addEventListener('click', () => {
             this.showSettingsModal();
+        });
+
+        // Window resize handler for mobile/desktop view switching
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                // Close mobile filters if switching to desktop
+                if (window.innerWidth > 768) {
+                    this.closeMobileFilters();
+                }
+                // Re-render books to apply correct layout
+                this.renderBooks();
+            }, 250);
         });
 
         // Dark mode toggle
@@ -275,6 +445,9 @@ class BookshelfLibrary {
         // Initialize book display from localStorage
         this.initializeBookDisplay();
 
+        // Initialize mobile pagination buttons
+        this.initializeMobilePagination();
+
         // Status change handler for date fields
         document.getElementById('book-status').addEventListener('change', (e) => {
             this.handleStatusChange(e.target.value);
@@ -286,6 +459,16 @@ class BookshelfLibrary {
         // Sort control
         document.getElementById('sort-select').addEventListener('change', (e) => {
             this.currentSort = e.target.value;
+
+            // Sync mobile sort options
+            document.querySelectorAll('.mobile-sort-option').forEach(btn => {
+                if (btn.dataset.sort === e.target.value) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
             this.applyFilters();
         });
 
@@ -615,6 +798,12 @@ class BookshelfLibrary {
     clearAllFilters() {
         // Reset search input
         document.getElementById('search-input').value = '';
+
+        // Reset mobile search input
+        const mobileSearchInput = document.getElementById('mobile-search-input');
+        if (mobileSearchInput) {
+            mobileSearchInput.value = '';
+        }
 
         // Uncheck all filter checkboxes
         const checkboxes = document.querySelectorAll('.filter-option input[type="checkbox"]');
@@ -1656,7 +1845,45 @@ class BookshelfLibrary {
     createListViewCard(book) {
         const coverUrl = book.coverUrl || '';
         const rating = book.user_rating || book.userRating || book.rating || 0;
+
+        // Check if mobile view (screen width <= 768px)
+        const isMobile = window.innerWidth <= 768;
+
+        // Series info
         const seriesInfo = book.series && book.series !== 'No' && book.seriesName ?
+            `${book.seriesName} #${book.seriesNumber || '?'}` : '';
+
+        // Mobile simplified view
+        if (isMobile) {
+            return `
+                <div class="book-card" data-isbn="${book.isbn}">
+                    <div class="book-cover-container">
+                        ${coverUrl ?
+                            `<img src="${coverUrl}" alt="${book.title}" class="book-cover" loading="lazy">` :
+                            `<div class="book-cover-placeholder">No Cover</div>`
+                        }
+                    </div>
+                    <div class="book-info">
+                        <div class="book-title">${book.title}</div>
+                        <div class="book-author">by ${book.author}</div>
+                        ${seriesInfo ? `<div class="book-series-info">${seriesInfo}</div>` : ''}
+                        <div class="book-tags-mobile">
+                            <span class="badge status-${book.status?.toLowerCase() || 'tbr'}">${book.status || 'TBR'}</span>
+                            ${this.getFormatBadges(book.format)}
+                        </div>
+                        <div class="book-rating">
+                            ${rating > 0 ?
+                                `<div class="stars">${this.generateStars(rating)}</div>` :
+                                `<div class="no-rating">Not Rated</div>`
+                            }
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Desktop full view
+        const seriesInfoBadge = book.series && book.series !== 'No' && book.seriesName ?
             `<span class="series-badge">${book.seriesName} #${book.seriesNumber || '?'}</span>` : '';
         const synopsis = book.synopsis || book.description || '';
         const truncatedSynopsis = synopsis.length > 500 ? synopsis.substring(0, 500) + '...' : synopsis;
@@ -1672,7 +1899,7 @@ class BookshelfLibrary {
                     <div class="book-title-author">
                         <div class="book-title">${book.title}</div>
                         <div class="book-author">by ${book.author}</div>
-                        ${seriesInfo ? `<div class="book-series-info">${seriesInfo}</div>` : ''}
+                        ${seriesInfoBadge ? `<div class="book-series-info">${seriesInfoBadge}</div>` : ''}
                     </div>
                     <div class="book-synopsis">${truncatedSynopsis}</div>
                     <div class="book-rating-section">
@@ -1910,6 +2137,94 @@ class BookshelfLibrary {
         window.bookshelf = this;
     }
 
+    toggleMobileFilters() {
+        const sidebar = document.querySelector('.filters-sidebar');
+        sidebar.classList.toggle('mobile-open');
+    }
+
+    closeMobileFilters() {
+        const sidebar = document.querySelector('.filters-sidebar');
+        sidebar.classList.remove('mobile-open');
+    }
+
+    toggleAuthCollapse() {
+        const toggleBtn = document.getElementById('mobile-auth-toggle');
+        const authContent = document.getElementById('mobile-auth-content');
+
+        toggleBtn.classList.toggle('collapsed');
+        authContent.classList.toggle('collapsed');
+    }
+
+    toggleSortCollapse() {
+        const toggleBtn = document.getElementById('mobile-sort-toggle');
+        const sortContent = document.getElementById('mobile-sort-content');
+
+        toggleBtn.classList.toggle('collapsed');
+        sortContent.classList.toggle('collapsed');
+    }
+
+    toggleFiltersCollapse() {
+        const toggleBtn = document.getElementById('mobile-filters-toggle');
+        const filtersContent = document.getElementById('filters-content');
+
+        toggleBtn.classList.toggle('collapsed');
+        filtersContent.classList.toggle('collapsed');
+    }
+
+    toggleSettingsCollapse() {
+        const toggleBtn = document.getElementById('mobile-settings-toggle');
+        const settingsContent = document.getElementById('mobile-settings-content');
+
+        toggleBtn.classList.toggle('collapsed');
+        settingsContent.classList.toggle('collapsed');
+    }
+
+    initializeMobilePagination() {
+        const currentGridCount = this.booksPerPage.grid;
+
+        // Update active state for mobile pagination buttons
+        document.querySelectorAll('.mobile-pagination-btn').forEach(btn => {
+            const count = parseInt(btn.dataset.count);
+            if (count === currentGridCount) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
+
+    openMobileSearch() {
+        const modal = document.getElementById('mobile-search-modal');
+        const input = document.getElementById('mobile-search-input');
+
+        modal.classList.remove('hidden');
+
+        // Set current search value
+        input.value = this.currentFilters.search || '';
+
+        // Focus input after a short delay to ensure modal is visible
+        setTimeout(() => {
+            input.focus();
+        }, 100);
+    }
+
+    closeMobileSearch() {
+        const modal = document.getElementById('mobile-search-modal');
+        modal.classList.add('hidden');
+    }
+
+    handleSearch(query) {
+        this.currentFilters.search = query.toLowerCase();
+        this.currentPage = 1;
+        this.applyFilters();
+
+        // Update desktop search input if it exists
+        const desktopSearchInput = document.getElementById('search-input');
+        if (desktopSearchInput && desktopSearchInput.value !== query) {
+            desktopSearchInput.value = query;
+        }
+    }
+
     showAddBookModal() {
         if (!this.isAuthenticated) {
             this.showNotification('Please go to Settings to authenticate before adding books', 'warning');
@@ -1976,14 +2291,71 @@ class BookshelfLibrary {
         }
     }
 
-    logout() {
+    authenticate(username, password, isMobile = false) {
+        const errorDiv = isMobile ? document.getElementById('mobile-auth-error') : document.getElementById('auth-error');
+
+        // Check if config file is loaded
+        if (!window.CONFIG || !window.CONFIG.AUTH_CREDENTIALS) {
+            errorDiv.textContent = 'Configuration file missing. Please copy config.example.js to config.js and update with your credentials.';
+            errorDiv.classList.remove('hidden');
+            if (isMobile) {
+                document.getElementById('mobile-auth-password').value = '';
+            } else {
+                document.getElementById('auth-password').value = '';
+            }
+            this.showNotification('Config file missing. Check config.example.js for setup instructions.', 'warning');
+            return;
+        }
+
+        // Get credentials from config file only
+        const validCredentials = window.CONFIG.AUTH_CREDENTIALS;
+
+        const isValid = validCredentials.some(cred =>
+            cred.username === username && cred.password === password
+        );
+
+        if (isValid) {
+            this.isAuthenticated = true;
+            this.updateAuthStatus();
+            this.showNotification('Authentication successful!', 'success');
+
+            // Clear form fields
+            if (isMobile) {
+                document.getElementById('mobile-auth-username').value = '';
+                document.getElementById('mobile-auth-password').value = '';
+            } else {
+                document.getElementById('auth-username').value = '';
+                document.getElementById('auth-password').value = '';
+            }
+            errorDiv.classList.add('hidden');
+        } else {
+            errorDiv.textContent = 'Invalid username or password.';
+            errorDiv.classList.remove('hidden');
+            // Clear password field for security
+            if (isMobile) {
+                document.getElementById('mobile-auth-password').value = '';
+                document.getElementById('mobile-auth-password').focus();
+            } else {
+                document.getElementById('auth-password').value = '';
+                document.getElementById('auth-password').focus();
+            }
+        }
+    }
+
+    logout(isMobile = false) {
         this.isAuthenticated = false;
         this.updateAuthStatus();
 
         // Clear form fields
-        document.getElementById('auth-username').value = '';
-        document.getElementById('auth-password').value = '';
-        document.getElementById('auth-error').classList.add('hidden');
+        if (isMobile) {
+            document.getElementById('mobile-auth-username').value = '';
+            document.getElementById('mobile-auth-password').value = '';
+            document.getElementById('mobile-auth-error').classList.add('hidden');
+        } else {
+            document.getElementById('auth-username').value = '';
+            document.getElementById('auth-password').value = '';
+            document.getElementById('auth-error').classList.add('hidden');
+        }
 
         this.showNotification('Logged out successfully', 'info');
     }
@@ -1994,6 +2366,12 @@ class BookshelfLibrary {
         const authFormContainer = document.getElementById('auth-form-container');
         const authBtn = document.getElementById('auth-btn');
 
+        // Mobile auth elements
+        const mobileAuthToggle = document.getElementById('mobile-auth-toggle');
+        const mobileAuthStatusText = document.getElementById('mobile-auth-status-text');
+        const mobileAuthFormContainer = document.getElementById('mobile-auth-form-container');
+        const mobileLogoutBtn = document.getElementById('mobile-logout-btn');
+
         if (this.isAuthenticated) {
             statusText.textContent = 'Authenticated';
             statusText.style.color = '#059669';
@@ -2003,6 +2381,22 @@ class BookshelfLibrary {
             // Update header button
             authBtn.textContent = 'Logout';
             authBtn.classList.add('authenticated');
+
+            // Update mobile auth section
+            if (mobileAuthToggle) {
+                mobileAuthToggle.querySelector('.menu-text').textContent = 'Logout';
+                mobileAuthToggle.classList.add('authenticated');
+            }
+            if (mobileAuthStatusText) {
+                mobileAuthStatusText.textContent = 'Authenticated';
+                mobileAuthStatusText.style.color = '#059669';
+            }
+            if (mobileAuthFormContainer) {
+                mobileAuthFormContainer.classList.add('hidden');
+            }
+            if (mobileLogoutBtn) {
+                mobileLogoutBtn.classList.remove('hidden');
+            }
         } else {
             statusText.textContent = 'Not Authenticated';
             statusText.style.color = 'var(--text-secondary)';
@@ -2012,29 +2406,55 @@ class BookshelfLibrary {
             // Update header button
             authBtn.textContent = 'Authenticate';
             authBtn.classList.remove('authenticated');
+
+            // Update mobile auth section
+            if (mobileAuthToggle) {
+                mobileAuthToggle.querySelector('.menu-text').textContent = 'Authenticate';
+                mobileAuthToggle.classList.remove('authenticated');
+            }
+            if (mobileAuthStatusText) {
+                mobileAuthStatusText.textContent = 'Not Authenticated';
+                mobileAuthStatusText.style.color = 'var(--text-secondary)';
+            }
+            if (mobileAuthFormContainer) {
+                mobileAuthFormContainer.classList.remove('hidden');
+            }
+            if (mobileLogoutBtn) {
+                mobileLogoutBtn.classList.add('hidden');
+            }
         }
     }
 
     initializeDarkMode() {
         const isDarkMode = localStorage.getItem('darkMode') === 'true';
         const toggle = document.getElementById('dark-mode-toggle');
+        const mobileToggle = document.getElementById('mobile-dark-mode-toggle');
 
         if (isDarkMode) {
             document.documentElement.setAttribute('data-theme', 'dark');
             toggle.checked = true;
+            if (mobileToggle) mobileToggle.checked = true;
         } else {
             document.documentElement.removeAttribute('data-theme');
             toggle.checked = false;
+            if (mobileToggle) mobileToggle.checked = false;
         }
     }
 
     toggleDarkMode(isDark) {
+        const toggle = document.getElementById('dark-mode-toggle');
+        const mobileToggle = document.getElementById('mobile-dark-mode-toggle');
+
         if (isDark) {
             document.documentElement.setAttribute('data-theme', 'dark');
             localStorage.setItem('darkMode', 'true');
+            toggle.checked = true;
+            if (mobileToggle) mobileToggle.checked = true;
         } else {
             document.documentElement.removeAttribute('data-theme');
             localStorage.setItem('darkMode', 'false');
+            toggle.checked = false;
+            if (mobileToggle) mobileToggle.checked = false;
         }
     }
 
@@ -2063,7 +2483,9 @@ class BookshelfLibrary {
     }
 
     initializeBookDisplay() {
-        const bookDisplay = localStorage.getItem('bookDisplay') || 'default';
+        // Force grid view on mobile
+        const isMobile = window.innerWidth <= 768;
+        const bookDisplay = isMobile ? 'default' : (localStorage.getItem('bookDisplay') || 'default');
         const radio = document.querySelector(`input[name="book-display"][value="${bookDisplay}"]`);
 
         if (radio) {
@@ -2076,14 +2498,22 @@ class BookshelfLibrary {
     setBookDisplay(display) {
         const bookshelf = document.querySelector('.bookshelf');
 
+        // Force grid view on mobile (screen width <= 768px)
+        const isMobile = window.innerWidth <= 768;
+        if (isMobile) {
+            display = 'default'; // Force grid view on mobile
+        }
+
         // Remove existing display classes
         bookshelf.classList.remove('book-display-default', 'book-display-list');
 
         // Add new display class
         bookshelf.classList.add(`book-display-${display}`);
 
-        // Save to localStorage
-        localStorage.setItem('bookDisplay', display);
+        // Save to localStorage (only if not mobile)
+        if (!isMobile) {
+            localStorage.setItem('bookDisplay', display);
+        }
 
         // Reset to first page when changing display mode
         this.currentPage = 1;
@@ -2236,6 +2666,9 @@ class BookshelfLibrary {
         if (pageNum >= 1 && pageNum <= totalPages) {
             this.currentPage = pageNum;
             this.renderBooks();
+
+            // Scroll to top when changing pages
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     }
 

@@ -19,13 +19,19 @@
     <!-- Main Title Bar -->
     <header class="main-header">
         <div class="main-header-content">
+            <button id="mobile-filter-toggle" class="mobile-filter-toggle" title="Toggle Menu">
+                <span class="hamburger-icon">☰</span>
+            </button>
             <div class="library-title">
                 <img src="book_image.png" alt="Book icon" class="book-icon">
                 <h1>My Reading Nook <span class="author-credit">by Alicia Domingo</span></h1>
             </div>
             <div class="header-controls">
-                <button id="auth-btn" class="auth-btn" title="Authentication">Authenticate</button>
-                <button id="settings-btn" class="settings-btn" title="Settings">Settings</button>
+                <button id="mobile-search-toggle" class="mobile-search-toggle" title="Search">
+                    <span class="search-icon">🔍</span>
+                </button>
+                <button id="auth-btn" class="auth-btn desktop-only" title="Authentication">Authenticate</button>
+                <button id="settings-btn" class="settings-btn desktop-only" title="Settings">Settings</button>
             </div>
         </div>
     </header>
@@ -35,10 +41,85 @@
         <div class="app-layout">
             <!-- Filters Sidebar -->
             <div class="filters-sidebar">
-                <div class="filters-header">
-                    <h3>Filters</h3>
-                    <button id="clear-filters-btn" class="clear-filters-btn">Clear All</button>
+                <!-- Mobile Header (only visible on mobile) -->
+                <div class="mobile-sidebar-header">
+                    <div class="mobile-logo">
+                        <img src="book_image.png" alt="Book icon" class="mobile-book-icon">
+                        <h2>My Reading Nook</h2>
+                    </div>
+                    <button id="mobile-close-btn" class="mobile-close-btn" title="Close Menu">×</button>
                 </div>
+
+                <!-- Mobile Menu Items (only visible on mobile) -->
+                <div class="mobile-menu-items">
+                    <!-- Authentication Section (Collapsible) -->
+                    <div class="mobile-auth-section">
+                        <button id="mobile-auth-toggle" class="mobile-menu-btn collapsed">
+                            <span class="menu-text">Authenticate</span>
+                            <span class="mobile-auth-toggle-icon">▼</span>
+                        </button>
+                        <div class="mobile-auth-content collapsed" id="mobile-auth-content">
+                            <div class="mobile-auth-form">
+                                <div id="mobile-auth-status" class="mobile-auth-status">
+                                    <span id="mobile-auth-status-text">Not Authenticated</span>
+                                </div>
+                                <div id="mobile-auth-form-container" class="mobile-auth-form-container">
+                                    <input type="text" id="mobile-auth-username" placeholder="Username" class="mobile-auth-input">
+                                    <input type="password" id="mobile-auth-password" placeholder="Password" class="mobile-auth-input">
+                                    <div id="mobile-auth-error" class="mobile-auth-error hidden"></div>
+                                    <button id="mobile-auth-submit" class="mobile-auth-submit">Login</button>
+                                </div>
+                                <button id="mobile-logout-btn" class="mobile-logout-btn hidden">Logout</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="mobile-add-book-btn" class="mobile-menu-btn">
+                        <span class="menu-text">Add Book</span>
+                    </button>
+                    <button id="mobile-stats-btn" class="mobile-menu-btn">
+                        <span class="menu-text">Statistics</span>
+                    </button>
+                </div>
+
+                <!-- Sort Section (collapsible on mobile) -->
+                <div class="mobile-sort-section">
+                    <button class="mobile-sort-toggle collapsed" id="mobile-sort-toggle">
+                        <span>Sort By</span>
+                        <span class="mobile-sort-toggle-icon">▼</span>
+                    </button>
+                    <div class="mobile-sort-content collapsed" id="mobile-sort-content">
+                        <div class="mobile-sort-options">
+                            <button class="mobile-sort-option active" data-sort="author-series-asc">Default</button>
+                            <button class="mobile-sort-option" data-sort="title-asc">Title (A-Z)</button>
+                            <button class="mobile-sort-option" data-sort="title-desc">Title (Z-A)</button>
+                            <button class="mobile-sort-option" data-sort="author-asc">Author (A-Z)</button>
+                            <button class="mobile-sort-option" data-sort="author-desc">Author (Z-A)</button>
+                            <button class="mobile-sort-option" data-sort="dateAdded-desc">Date Added (Newest)</button>
+                            <button class="mobile-sort-option" data-sort="dateAdded-asc">Date Added (Oldest)</button>
+                            <button class="mobile-sort-option" data-sort="datePublished-desc">Published (Newest)</button>
+                            <button class="mobile-sort-option" data-sort="datePublished-asc">Published (Oldest)</button>
+                            <button class="mobile-sort-option" data-sort="dateStarted-desc">Started (Recent)</button>
+                            <button class="mobile-sort-option" data-sort="dateStarted-asc">Started (Oldest)</button>
+                            <button class="mobile-sort-option" data-sort="dateFinished-desc">Finished (Recent)</button>
+                            <button class="mobile-sort-option" data-sort="dateFinished-asc">Finished (Oldest)</button>
+                            <button class="mobile-sort-option" data-sort="pageCount-desc">Pages (Most)</button>
+                            <button class="mobile-sort-option" data-sort="pageCount-asc">Pages (Least)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters Section (collapsible on mobile) -->
+                <div class="filters-section-wrapper">
+                    <button class="mobile-filters-toggle collapsed" id="mobile-filters-toggle">
+                        <span>Filters</span>
+                        <span class="mobile-filters-toggle-icon">▼</span>
+                    </button>
+                    <div class="filters-content collapsed" id="filters-content">
+                        <div class="filters-header">
+                            <h3>Filters</h3>
+                            <button id="clear-filters-btn" class="clear-filters-btn">Clear All</button>
+                        </div>
 
                 <!-- Status Filter -->
                 <div class="filter-category">
@@ -174,14 +255,14 @@
                 </div>
 
 
-                <!-- Date Published Filter -->
+                <!-- Year Published Filter -->
                 <div class="filter-category">
                     <button class="filter-category-toggle" data-category="datePublished">
-                        <span class="filter-category-title">Date Published</span>
+                        <span class="filter-category-title">Year Published</span>
                         <span class="filter-toggle-icon">▼</span>
                     </button>
                     <div class="filter-options scrollable-filter" id="datePublished-options">
-                        <!-- Date published options will be populated dynamically -->
+                        <!-- Year published options will be populated dynamically -->
                     </div>
                 </div>
 
@@ -195,6 +276,44 @@
                         <!-- Series options will be populated dynamically -->
                     </div>
                 </div>
+                    </div>
+                    <!-- End of filters-content -->
+                </div>
+                <!-- End of filters-section-wrapper -->
+
+                <!-- Mobile Settings Section (Collapsible, only visible on mobile, at bottom) -->
+                <div class="mobile-settings-container">
+                    <button id="mobile-settings-toggle" class="mobile-menu-btn collapsed">
+                        <span class="menu-text">Settings</span>
+                        <span class="mobile-settings-toggle-icon">▼</span>
+                    </button>
+                    <div class="mobile-settings-content collapsed" id="mobile-settings-content">
+                        <div class="mobile-settings-form">
+                            <!-- Dark Mode -->
+                            <div class="mobile-setting-item">
+                                <label class="mobile-setting-label">
+                                    <span>Dark Mode</span>
+                                    <div class="mobile-toggle-switch">
+                                        <input type="checkbox" id="mobile-dark-mode-toggle" class="mobile-toggle-input">
+                                        <span class="mobile-toggle-slider"></span>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <!-- Books Per Page -->
+                            <div class="mobile-setting-item">
+                                <label class="mobile-setting-label">Books Per Page (Grid)</label>
+                                <div class="mobile-pagination-options">
+                                    <button class="mobile-pagination-btn" data-count="10">10</button>
+                                    <button class="mobile-pagination-btn" data-count="20">20</button>
+                                    <button class="mobile-pagination-btn" data-count="30">30</button>
+                                    <button class="mobile-pagination-btn active" data-count="40">40</button>
+                                    <button class="mobile-pagination-btn" data-count="50">50</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Main Content -->
@@ -203,16 +322,16 @@
                     <div class="container">
 
                         <!-- Add Book, Statistics, Search, and Sort Controls -->
-                        <div class="sort-controls">
+                        <div class="top-controls">
                             <div class="left-controls">
-                                <button id="add-book-btn" class="add-book-btn" title="Add New Book">Add Book</button>
-                                <button id="statistics-btn" class="statistics-btn" title="Library Statistics">Statistics</button>
-                                <div class="search-container">
+                                <button id="add-book-btn" class="add-book-btn desktop-only" title="Add New Book">Add Book</button>
+                                <button id="statistics-btn" class="statistics-btn desktop-only" title="Library Statistics">Statistics</button>
+                                <div class="search-container desktop-only">
                                     <input type="text" id="search-input" placeholder="Search by title, author, etc..." class="search-input">
                                     <button id="clear-search" class="clear-search" aria-label="Clear search">×</button>
                                 </div>
                             </div>
-                            <div class="sort-control">
+                            <div class="sort-control desktop-only">
                                 <label for="sort-select">Sort by:</label>
                                 <select id="sort-select">
                                     <option value="author-series-asc" selected>Default</option>
@@ -304,7 +423,7 @@
                         </label>
                     </div>
 
-                    <div class="setting-item">
+                    <div class="setting-item desktop-only">
                         <label class="setting-label">
                             <span>Filter Bar Size</span>
                             <div class="size-selector">
@@ -318,7 +437,7 @@
                         </label>
                     </div>
 
-                    <div class="setting-item">
+                    <div class="setting-item desktop-only">
                         <label class="setting-label">
                             <span>Book Display</span>
                             <div class="size-selector">
@@ -634,6 +753,16 @@
     </div>
                 </div>
             </main>
+        </div>
+    </div>
+
+    <!-- Mobile Search Modal -->
+    <div id="mobile-search-modal" class="mobile-search-modal hidden">
+        <div class="mobile-search-content">
+            <div class="mobile-search-header">
+                <input type="text" id="mobile-search-input" placeholder="Search by title, author, etc..." class="mobile-search-input" autofocus>
+                <button id="mobile-search-close" class="mobile-search-close">×</button>
+            </div>
         </div>
     </div>
 
